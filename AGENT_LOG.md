@@ -226,3 +226,11 @@
 - **使用的 Superpowers skill**：实际读取并采用 `using-superpowers`、`executing-plans`、`using-git-worktrees`、`subagent-driven-development`、`test-driven-development` 和 `verification-before-completion` 的执行约束；实现将使用 fresh subagent、TDD、隔离 worktree 与每任务双阶段评审。
 - **实际修订**：将 `AGENTS.md` 切换为实现阶段约束；同步 `SPEC.md`、`PLAN.md` 当前状态与执行交接，记录阶段限制已经由用户解除而非智能体自行宣布。
 - **范围与红线**：当前仅启动 T01，后续任务和外部交付均未发生、未预先声明完成；`REFLECTION.md`、伪造证据、凭据/私有 Diff 泄露和未经授权的外部推送/发布仍继续禁止。
+
+## 2026-08-09 00:00:53 +08:00 — 阶段：T01.1 环境预检 / 阻塞
+
+- **Task / 当前工作**：在 `codex/foundation` 隔离 worktree 中开始 T01.1 前，核验 PLAN 所固定的 Python 3.12 运行时；尚未创建 `apps/`、实现代码、测试或依赖文件。
+- **使用的 Superpowers skill**：实际采用 `using-git-worktrees`、`subagent-driven-development`、`test-driven-development` 与 `verification-before-completion` 的前置要求。创建了 Git 忽略的 SDD 账本和唯一 T01.1 简报；原 SDD shell helper 因 Windows 环境拒绝运行 `bash.exe`，故按其目录/账本约定手工建立等价过程文件，并保留该偏离事实。
+- **真实证据**：`py -3.12 --version` 返回 “No suitable Python runtime found”；`py -0p` 仅列出 Python 3.13。曾在用户授权下调用 `winget install --id Python.Python.3.12 --exact --source winget --accept-package-agreements --accept-source-agreements`，命令窗口在 120 秒后超时；随后解释器仍不可用，未把 3.13 作为 `>=3.12,<3.13` 目标环境替代。
+- **subagent 过程**：已派发一个 fresh T01.1 实现 subagent，要求先做只读 `py -3.12` 预检；其未能在合理时间内完成阻塞报告，已中断，未采纳其任何未验证实现结论，也未允许其创建项目文件。
+- **阻塞与下一步**：T01.1 的 RED/GREEN 必须在 Python 3.12 运行，当前不能诚实执行。等待目标解释器可用后，再由新的 fresh implementation subagent 从 T01.1 的失败测试开始；不回填 PLAN commit hash、不开始 T01.2–T01.4。
