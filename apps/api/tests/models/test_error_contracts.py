@@ -46,3 +46,14 @@ def test_demo_disables_private_features() -> None:
     assert capabilities.ai_retry is False
     assert capabilities.persistent_export is False
     assert capabilities.credential_management is False
+
+
+def test_private_enables_private_features() -> None:
+    capabilities = mode_capabilities(ReviewMode.PRIVATE)
+
+    assert capabilities == ModeCapabilities(True, True, True, True, True)
+    assert capabilities.report_persistence is True
+    assert capabilities.report_history is True
+    assert capabilities.ai_retry is True
+    assert capabilities.persistent_export is True
+    assert capabilities.credential_management is True
