@@ -312,3 +312,9 @@
 - **用户授权与实际操作**：用户明确授权将 M03 worktree 加入可写环境。为不触碰主分支已有的 `README.md` 与 `.codex` 未提交内容，控制器仅提交主分支 `.gitignore` 的 `.worktrees/` 安全忽略规则（`cd5a915`），并验证 Git 忽略生效。
 - **迁移结果**：使用 Git 的 worktree move 将现有 `codex/diff-parser` worktree 从 `C:\Users\LiXiaozhou\reviewlens-diff-parser` 移至 `C:\Users\LiXiaozhou\reviewlens-ai4se\.worktrees\diff-parser`；分支和既有提交保持不变。PLAN 的 worktree 位置已如实更新。该目录位于 implementation subagent 的可写根路径内，同时仍受 Git 忽略，因此继续满足隔离和不污染仓库的要求。
 - **下一步**：重新派发一名 fresh T03.1 implementation subagent，从尚未开始的 RED 测试开始；不复用前两次无产出/权限阻塞的派发。
+
+## 2026-08-09 22:18:00 +08:00 — 阶段：T03.1 完成 / Diff 输入编码拒绝与双阶段审查
+
+- **Task / subagent**：在已迁移的可写 `codex/diff-parser` worktree，fresh implementation subagent 只创建 `apps/api/app/diff_parser/normalizer.py` 与 `apps/api/tests/diff_parser/test_normalizer.py`。提交 `b86e296` (`feat(api): validate diff input encoding`) 定义 `DiffNormalizationError.code` 与 `decode_utf8_diff(raw)`；空字节映射 `INPUT_EMPTY`，严格 UTF-8 解码失败映射 `INVALID_UTF8`，不替代编码、不记录原始输入。
+- **真实 TDD 与验证**：先仅写两条合成输入测试，所有者 Python 3.12 的 RED 为 `ModuleNotFoundError: No module named 'app.diff_parser'`。最小实现后，控制器独立验证聚焦测试 `1 passed in 0.03s`、normalizer 测试 `2 passed in 0.03s`、全套后端测试 `15 passed in 0.60s`；未使用 Python 3.13。
+- **两阶段审查**：fresh spec reviewer 批准，确认代码/错误码/严格解码/无 raw 输入泄露与范围完全符合；fresh quality reviewer 批准，确认异常链、类型、测试和最小范围合格。两轮均无 Critical、Important 或 Minor。
