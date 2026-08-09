@@ -306,3 +306,9 @@
 - **Task / 当前工作**：按 PLAN 从已完成的 M02 创建独立 `codex/diff-parser` / `C:\Users\LiXiaozhou\reviewlens-diff-parser` worktree；在所有者 Python 3.12 上完成 M03 基线 `py -3.12 -m pytest -q`，结果为 `13 passed in 0.67s`。随后按严格 TDD 派发 fresh T03.1 implementation subagent，要求先只写空输入与非 UTF-8 的 RED 测试。
 - **实际阻塞与范围**：第一位实现 subagent 在未创建文件、未运行测试前无产出而被中止。第二位全新 subagent 明确报告其 sandbox 仅允许写入主仓库 `C:\Users\LiXiaozhou\reviewlens-ai4se`，对计划指定的新 worktree 无写权限；创建 `apps/api/tests/diff_parser` 时得到 `AccessDenied`，未改动任何业务文件。控制器核对后确认 `normalizer.py` 与测试文件均不存在。
 - **处理与教训**：未绕过 fresh-subagent、隔离 worktree 或 RED→GREEN 要求自行代写 T03.1，也未以控制器的所有者权限制造实现成果。需先恢复/授予 implementation subagent 对计划指定 `C:\Users\LiXiaozhou\reviewlens-diff-parser` worktree 的写权限，才能从同一 T03.1 RED 步骤重新派发；该阻塞与 Python 3.12、规格或代码正确性无关。
+
+## 2026-08-09 22:06:00 +08:00 — 阶段：M03 worktree 权限恢复
+
+- **用户授权与实际操作**：用户明确授权将 M03 worktree 加入可写环境。为不触碰主分支已有的 `README.md` 与 `.codex` 未提交内容，控制器仅提交主分支 `.gitignore` 的 `.worktrees/` 安全忽略规则（`cd5a915`），并验证 Git 忽略生效。
+- **迁移结果**：使用 Git 的 worktree move 将现有 `codex/diff-parser` worktree 从 `C:\Users\LiXiaozhou\reviewlens-diff-parser` 移至 `C:\Users\LiXiaozhou\reviewlens-ai4se\.worktrees\diff-parser`；分支和既有提交保持不变。PLAN 的 worktree 位置已如实更新。该目录位于 implementation subagent 的可写根路径内，同时仍受 Git 忽略，因此继续满足隔离和不污染仓库的要求。
+- **下一步**：重新派发一名 fresh T03.1 implementation subagent，从尚未开始的 RED 测试开始；不复用前两次无产出/权限阻塞的派发。

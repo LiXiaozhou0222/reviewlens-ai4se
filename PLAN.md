@@ -173,7 +173,7 @@ flowchart LR
 
 ### M03 — Diff 规范化与解析
 
-**Branch/worktree：** `codex/diff-parser` / `../reviewlens-diff-parser`
+**Branch/worktree：** `codex/diff-parser` / `.worktrees/diff-parser`（原 `../reviewlens-diff-parser` 因实现 subagent 无写权限，经用户于 2026-08-09 明确授权后迁移；仍为独立 Git 忽略 worktree）
 **Depends on：** M02
 
 | Task | 文件与最小目标 | RED / 预期 | GREEN / 预期 |
