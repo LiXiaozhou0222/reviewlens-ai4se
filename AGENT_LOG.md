@@ -234,3 +234,9 @@
 - **真实证据**：`py -3.12 --version` 返回 “No suitable Python runtime found”；`py -0p` 仅列出 Python 3.13。曾在用户授权下调用 `winget install --id Python.Python.3.12 --exact --source winget --accept-package-agreements --accept-source-agreements`，命令窗口在 120 秒后超时；随后解释器仍不可用，未把 3.13 作为 `>=3.12,<3.13` 目标环境替代。
 - **subagent 过程**：已派发一个 fresh T01.1 实现 subagent，要求先做只读 `py -3.12` 预检；其未能在合理时间内完成阻塞报告，已中断，未采纳其任何未验证实现结论，也未允许其创建项目文件。
 - **阻塞与下一步**：T01.1 的 RED/GREEN 必须在 Python 3.12 运行，当前不能诚实执行。等待目标解释器可用后，再由新的 fresh implementation subagent 从 T01.1 的失败测试开始；不回填 PLAN commit hash、不开始 T01.2–T01.4。
+
+## 2026-08-09 09:53:14 +08:00 — 阶段：T01.1 环境阻塞解除 / 重新派发准备
+
+- **用户提供的恢复结果**：用户明确报告 `py -3.12 --version → Python 3.12.10`，并确认 `py --list` 包含 Python 3.12 (64-bit)。
+- **独立复核**：在 worktree 所有者上下文中实际运行 `py -3.12 --version`，输出 `Python 3.12.10`；`py --list` 同时列出 3.12、3.13 与 3.9；`codex/foundation` 当前 HEAD 为 `75e19a9`。普通沙箱会话因不同 Windows 身份无法访问该 worktree 并仅显示 Store 版 3.13，故所有项目命令必须经同一所有者上下文且显式使用 `py -3.12`，不得调用默认 `py` 或 `python`。
+- **下一步**：此前运行时阻塞解除。重新派发一名全新 T01.1 implementation subagent，从失败测试开始执行 RED → GREEN → REFACTOR；其后仍须完成规约符合性评审与代码质量评审，任何成功结论均以前述 Python 3.12 实际输出为证。
