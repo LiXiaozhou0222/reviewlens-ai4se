@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from pydantic import ValidationError
 import pytest
 
 from app.config.settings import AppSettings, load_settings
@@ -14,8 +13,20 @@ def test_create_app_preserves_explicit_private_mode() -> None:
 
 
 def test_load_settings_rejects_unknown_app_mode() -> None:
-    with pytest.raises(ValidationError):
-        load_settings({"APP_MODE": "shared"})
+    invalid_mode = "untrusted-public-mode"
+
+    with pytest.raises(ValueError) as error:
+        load_settings({"APP_MODE": invalid_mode})
+
+    assert str(error.value) == "APP_MODE must be explicitly set to 'private' or 'demo'."
+    assert invalid_mode not in str(error.value)
+
+
+def test_load_settings_rejects_missing_app_mode() -> None:
+    with pytest.raises(ValueError) as error:
+        load_settings({})
+
+    assert str(error.value) == "APP_MODE must be explicitly set to 'private' or 'demo'."
 
 
 @pytest.mark.parametrize("app_mode", ["private", "demo"])
