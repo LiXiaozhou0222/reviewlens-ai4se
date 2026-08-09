@@ -1,3 +1,10 @@
+from datetime import UTC, datetime
+from uuid import uuid4
+
+import pytest
+from pydantic import ValidationError
+
+from app.models.api import FindingDraft, ReportView, SanitizedFinding
 from app.models.domain import AIReviewStatus, FindingSource, ReviewMode, Severity
 
 
@@ -33,3 +40,55 @@ def test_finding_source_and_ai_review_status_values_are_fixed() -> None:
         ("INVALID_RESPONSE", "INVALID_RESPONSE"),
         ("PROVIDER_UNAVAILABLE", "PROVIDER_UNAVAILABLE"),
     ]
+
+
+def test_report_view_requires_sanitized_findings() -> None:
+    """A report accepts sanitized findings only and cannot receive raw excerpts."""
+    draft = FindingDraft(
+        rule_id="RL001",
+        rule_version="1.0.0",
+        source=FindingSource.GENERAL_RULE,
+        severity=Severity.HIGH,
+        path="src/example.py",
+        new_line=12,
+        raw_excerpt="synthetic non-secret source context",
+        message="Avoid unsafe pattern.",
+        suggestion="Use the safe alternative.",
+    )
+    report_fields = {
+        "report_id": uuid4(),
+        "created_at": datetime(2026, 8, 9, tzinfo=UTC),
+        "updated_at": datetime(2026, 8, 9, tzinfo=UTC),
+        "diff_sha256": "a" * 64,
+        "deterministic_risk": Severity.HIGH,
+        "ai_status": AIReviewStatus.SUCCEEDED,
+        "provider": "example-provider",
+        "model": "example-model",
+        "ruleset_version": "1.0.0",
+        "app_version": "0.1.0",
+    }
+
+    with pytest.raises(ValidationError):
+        ReportView(**report_fields, findings=[draft])
+
+    finding = SanitizedFinding(
+        rule_id="RL001",
+        rule_version="1.0.0",
+        source=FindingSource.GENERAL_RULE,
+        severity=Severity.HIGH,
+        path="src/example.py",
+        new_line=12,
+        excerpt="synthetic sanitized context",
+        message="Avoid unsafe pattern.",
+        suggestion="Use the safe alternative.",
+        redacted=True,
+        redaction_version="1.0.0",
+        redaction_category="credential",
+    )
+
+    assert ReportView(**report_fields, findings=[finding]).findings == [finding]
+
+    with pytest.raises(ValidationError):
+        SanitizedFinding(
+            **finding.model_dump(), raw_excerpt="synthetic non-secret source context"
+        )
