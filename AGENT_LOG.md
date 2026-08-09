@@ -248,3 +248,11 @@
 - **规约符合性评审**：fresh reviewer 基于 T01.1 简报、实现报告与提交差异包批准；确认五项计划资产、`>=3.12,<3.13` 和有上界依赖、`private|demo`、显式注入、`app.state.settings.mode`、无环境读取、无 T01.3/T01.4 越界以及真实锁文件均符合。Critical/Important/Minor：均无。
 - **代码质量评审**：另一位 fresh reviewer 批准；确认 Pydantic/FastAPI 使用、真实行为测试、依赖/锁文件卫生、最小范围和可维护性均合格。Critical/Important/Minor：均无。
 - **人工干预与教训**：用户明确解除 owner-context 的 Python 3.12 执行权限；普通沙箱身份仍只见 3.13，因此后续项目 Python 命令必须继续显式走 `py -3.12` 与所有者上下文。Windows pip 的 console-script PATH warning 不影响 `py -3.12 -m ...` 命令，未把它伪称为无警告环境。
+
+## 2026-08-09 13:50:33 +08:00 — 阶段：T01.2 完成 / 真实 TDD、安全修复与双阶段审查
+
+- **Task / subagent**：Fresh implementation subagent 在 `codex/foundation` worktree 完成 T01.2 的最小 React mode shell。首个实现提交为 `e088f9b` (`feat(web): add mode shell bootstrap`)；范围仅包括 `apps/web` 的 package metadata/lockfile、Vite 配置、React 挂载入口、静态 `App` 和一个真实渲染测试，不包含 private/demo 模式判定、后端接口或其他后续功能。
+- **真实 RED → GREEN → REFACTOR 证据**：RED 先创建测试后运行 `npm.cmd run test -- --run tests/app_bootstrap.test.tsx -t "renders the mode shell"`，因 `Failed to resolve import ../src/App` 以退出码 1 失败。最小 `App`/入口实现后，同一聚焦命令通过（1/1），完整前端测试 `npm.cmd run test -- --run` 也通过（1 file、1 test）。Windows 的 `npm.ps1` 执行策略受限，因此如实使用 `npm.cmd`，未修改执行策略。
+- **规约符合性审查与修复轮**：Fresh spec reviewer 首轮拒绝批准，指出直接依赖 `vitest 3.2.4` 有 Critical 公告、`vite 7.0.6` 有 High 公告；均有非破坏性修复版本。按 Critical gate 将同一实现 subagent 恢复到 fix round 1，只精确升级为 `vitest 3.2.7` 与 `vite 7.3.6`、重生成 `package-lock.json`，提交 `f0759d4` (`chore(web): patch vite and vitest`)。控制器独立复跑聚焦测试和完整测试，均为 1/1 通过；`npm.cmd audit --json` 退出码 0，high=0、critical=0、total=0。新的 fresh spec re-reviewer 批准，Critical/Important/Minor 均无。
+- **代码质量审查**：另一名 fresh quality reviewer 审查完整 T01.2 范围 `a8c3d5f..f0759d4` 后批准，确认语义化静态 shell、真实可访问性查询测试、精确锁定版本和无后续模式行为；Critical/Important/Minor 均无。
+- **过程证据与教训**：审查包、原始 audit JSON、fix-round 审查包和 implementation report 均保存在 Git 忽略的 `.superpowers/sdd/PLAN/`。实施中首次依赖安装曾超时，未把超时伪称为完成；仅在真实完成、测试与 audit 重跑后继续。规则要求的先规约符合性、再代码质量审查已执行；T01.3/T01.4 尚未开始。
