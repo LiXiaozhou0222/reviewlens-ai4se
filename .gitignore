@@ -32,3 +32,6 @@ logs/
 
 # Local Superpowers execution artifacts
 .superpowers/
+
+# Local linked worktrees
+.worktrees/
