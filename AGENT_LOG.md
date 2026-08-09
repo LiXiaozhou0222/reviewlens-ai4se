@@ -264,3 +264,10 @@
 - **安全修复与建议采纳**：采纳 fresh spec reviewer 的 Critical/Important 意见：不再把原始 `APP_MODE` 交给会回显输入的 Pydantic 错误路径。`load_settings` 先只接受精确 `private`/`demo`，其他值和缺失值均抛出固定文本的 `StartupConfigurationError`，测试断言错误文本不包含非法输入。该错误不含凭据或原始环境值。
 - **两阶段审查**：初始 fresh spec review 为 NEEDS_FIXES（Critical：错误输入回显；Important：缺失值与无回显测试不足）。同一 task 的 fix round 后由新的 fresh spec re-review 批准，Critical/Important/Minor 均无；随后 fresh quality reviewer 批准，确认范围、类型、可维护性、测试和无 T01.4 越界，Critical/Important/Minor 均无。
 - **人工干预、环境偏离与教训**：所有 Python 命令继续显式使用所有者上下文的 `py -3.12`，未使用 3.13。实施智能体可修改 worktree 文件，却因 `index.lock` 权限被拒无法执行普通 `git add`；控制器只以所有者 Git 权限提交已由实施智能体产生、且已独立验证的两文件差异，未代写业务代码。部分智能体的所有者命令队列无响应时，控制器如实重跑相同的 Python 3.12 验证；不把排队或权限问题伪称为测试结果。T01.4 尚未开始。
+
+## 2026-08-09 19:24:07 +08:00 — 阶段：T01.4 完成 / 运行时工厂与双阶段审查
+
+- **Task / subagent**：Fresh implementation subagent 仅修改 `apps/api/app/main.py` 与 `apps/api/tests/test_app_bootstrap.py`。新增 `create_runtime_app() -> FastAPI`，实现固定为 `create_app(load_settings(os.environ))`；既有 `create_app(settings)` 保持纯显式注入。提交为 `49956e5` (`feat(api): add runtime app factory`)。
+- **真实 RED → GREEN → REFACTOR 证据**：实施智能体先新增一个真实运行时测试：使用 `monkeypatch` 设置 `APP_MODE=private` 并断言可观察 private mode，然后在同一测试中覆盖缺失和非法值。其受限身份看不到 3.12，未回退到 3.13；控制器以所有者 Python 3.12 运行计划的聚焦命令，真实 RED 为 `ImportError: cannot import name 'create_runtime_app' from 'app.main'`。最小工厂写入后，控制器运行同一聚焦命令得到 `1 passed in 0.62s`，再运行 `py -3.12 -m pytest -q` 得到 `6 passed in 0.61s`。
+- **两阶段审查**：Fresh spec reviewer 批准，确认运行时工厂精确组合 `create_app(load_settings(os.environ))`、缺失/非法值在返回 app 前失败、无默认推断且无 Docker/Uvicorn/路由/依赖越界。Fresh quality reviewer 亦批准，确认导入、测试、最小范围和可维护性合格；两轮均无 Critical/Important/Minor。
+- **人工干预与教训**：所有 Python 验证继续显式使用所有者上下文的 `py -3.12`。按已记录的 Git worktree 权限边界，控制器仅完成经 diff 检查和测试验证后的所有者 Git 提交；未代写实现。T01.1—T01.4 的基础配置、显式应用工厂、唯一模式解析入口和运行时 bootstrap 合同现已完整闭环；下一计划模块尚未开始。
