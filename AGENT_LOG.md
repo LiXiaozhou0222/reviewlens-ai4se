@@ -271,3 +271,11 @@
 - **真实 RED → GREEN → REFACTOR 证据**：实施智能体先新增一个真实运行时测试：使用 `monkeypatch` 设置 `APP_MODE=private` 并断言可观察 private mode，然后在同一测试中覆盖缺失和非法值。其受限身份看不到 3.12，未回退到 3.13；控制器以所有者 Python 3.12 运行计划的聚焦命令，真实 RED 为 `ImportError: cannot import name 'create_runtime_app' from 'app.main'`。最小工厂写入后，控制器运行同一聚焦命令得到 `1 passed in 0.62s`，再运行 `py -3.12 -m pytest -q` 得到 `6 passed in 0.61s`。
 - **两阶段审查**：Fresh spec reviewer 批准，确认运行时工厂精确组合 `create_app(load_settings(os.environ))`、缺失/非法值在返回 app 前失败、无默认推断且无 Docker/Uvicorn/路由/依赖越界。Fresh quality reviewer 亦批准，确认导入、测试、最小范围和可维护性合格；两轮均无 Critical/Important/Minor。
 - **人工干预与教训**：所有 Python 验证继续显式使用所有者上下文的 `py -3.12`。按已记录的 Git worktree 权限边界，控制器仅完成经 diff 检查和测试验证后的所有者 Git 提交；未代写实现。T01.1—T01.4 的基础配置、显式应用工厂、唯一模式解析入口和运行时 bootstrap 合同现已完整闭环；下一计划模块尚未开始。
+
+## 2026-08-09 20:08:19 +08:00 — 阶段：T02.1 完成 / 领域字符串合同与双阶段审查
+
+- **Task / subagent**：在 `codex/domain-contracts` worktree 的 T02.1 中，fresh implementation subagent 仅创建 `apps/api/app/models/domain.py` 与 `apps/api/tests/models/test_domain_contracts.py`。提交 `9d13a90` (`feat(api): add domain vocabularies`) 定义精确的 `ReviewMode`、`Severity`、`FindingSource` 与 `AIReviewStatus` 字符串枚举；未实现错误代码、Pydantic API 模型、模式策略、规则、持久化、路由或 Provider。
+- **真实 RED → GREEN → REFACTOR 证据**：先只创建测试文件后，以所有者 Python 3.12 运行 `py -3.12 -m pytest tests/models/test_domain_contracts.py::test_review_mode_and_severity_values_are_fixed -q`；真实 RED 为 `ModuleNotFoundError: No module named 'app.models.domain'`（`1 error in 0.22s`）。写入最小枚举后，实施智能体报告聚焦 GREEN `1 passed in 0.03s`、全量后端 `8 passed in 0.63s`。控制器从正确的 `apps/api` cwd 独立复跑，聚焦为 `1 passed in 0.03s`、全量为 `8 passed in 0.60s`；曾在仓库根目录误用相对测试路径并得到“file or directory not found”，该 cwd 命令错误未被记作测试失败，已立即以正确 cwd 重跑。
+- **规约符合性审查**：Fresh spec reviewer 批准，确认四种 `StrEnum` 的成员及 wire values 与 SPEC 一致，触及文件仅两项，未越过 T02.2—T02.4。Critical/Important/Minor：均无。
+- **代码质量审查与停放项**：Fresh quality reviewer 批准，Critical/Important 均无。Minor：测试以枚举迭代断言成员，会忽略将来可能的 alias；本任务当前枚举无 alias，SPEC/简报也未要求 alias 检测，故不为其新增超范围机制。该 minor 已在 SDD 账本停放，留待最终全分支审查复核。
+- **执行环境与教训**：新 M02 worktree 的 `.superpowers/` 初始未被忽略，按 worktree 安全流程先真实提交 `7af34d0` 将其加入 `.gitignore`，再创建 Git 忽略账本。实施智能体的默认身份仍无法发现 Python 3.12；所有有效验证均明确使用 worktree 所有者上下文的 `py -3.12`，未使用 3.13。
