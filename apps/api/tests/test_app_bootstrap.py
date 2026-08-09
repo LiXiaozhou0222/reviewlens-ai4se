@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 import pytest
 
-from app.config.settings import AppSettings, load_settings
-from app.main import create_app
+from app.config.settings import AppSettings, StartupConfigurationError, load_settings
+from app.main import create_app, create_runtime_app
 
 
 def test_create_app_preserves_explicit_private_mode() -> None:
@@ -34,3 +34,22 @@ def test_load_settings_accepts_valid_app_mode(app_mode: str) -> None:
     settings = load_settings({"APP_MODE": app_mode})
 
     assert settings.mode == app_mode
+
+
+def test_create_runtime_app_uses_env_and_rejects_missing_or_invalid_mode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("APP_MODE", "private")
+
+    app = create_runtime_app()
+
+    assert isinstance(app, FastAPI)
+    assert app.state.settings.mode == "private"
+
+    monkeypatch.delenv("APP_MODE")
+    with pytest.raises(StartupConfigurationError):
+        create_runtime_app()
+
+    monkeypatch.setenv("APP_MODE", "untrusted-public-mode")
+    with pytest.raises(StartupConfigurationError):
+        create_runtime_app()
