@@ -300,3 +300,9 @@
 - **真实 RED → GREEN → REFACTOR 证据**：先只加入 Demo 合同测试后，所有者 Python 3.12 运行 `py -3.12 -m pytest tests/models/test_error_contracts.py::test_demo_disables_private_features -q`，得到预期 RED：`ModuleNotFoundError: No module named 'app.config.mode_policy'`。写入最小 policy 后，同一聚焦命令 GREEN 为 `1 passed in 0.03s`，全套后端为 `12 passed in 0.68s`。
 - **两阶段审查与修复**：Fresh spec reviewer 直接批准。Fresh quality reviewer 提出 Important：Private all-true 合同没有直接回归测试。原 implementation subagent 的 fix round 1 只增加 `test_private_enables_private_features`，没有改生产代码；控制器先确认初始测试 `1 passed in 0.04s`，再临时将 Private 的 `report_persistence` 变异为 `False`，新测试真实失败并精确指出该字段，随后立即恢复原值。恢复后 Demo+Private 聚焦测试为 `2 passed in 0.03s`，全套后端为 `13 passed in 0.48s`；提交 `1193797` (`test(api): cover private mode capability policy`) 后，fresh scoped quality re-review 批准。未遗留 Critical、Important 或 Minor。
 - **人工干预与教训**：实施智能体仍无法在其默认身份中看到 Python 3.12 或写入 Git index lock；控制器仅以所有者上下文执行真实 Python 3.12 验证与对 agent 已产生、已检查 diff 的提交，未代写业务实现。审查发现“另一模式”合同未直接覆盖时，补测必须通过受控变异证明其敏感性，不能只因当前实现恰好通过而视为充分。
+
+## 2026-08-09 21:56:39 +08:00 — 阶段：M03/T03.1 启动权限阻塞
+
+- **Task / 当前工作**：按 PLAN 从已完成的 M02 创建独立 `codex/diff-parser` / `C:\Users\LiXiaozhou\reviewlens-diff-parser` worktree；在所有者 Python 3.12 上完成 M03 基线 `py -3.12 -m pytest -q`，结果为 `13 passed in 0.67s`。随后按严格 TDD 派发 fresh T03.1 implementation subagent，要求先只写空输入与非 UTF-8 的 RED 测试。
+- **实际阻塞与范围**：第一位实现 subagent 在未创建文件、未运行测试前无产出而被中止。第二位全新 subagent 明确报告其 sandbox 仅允许写入主仓库 `C:\Users\LiXiaozhou\reviewlens-ai4se`，对计划指定的新 worktree 无写权限；创建 `apps/api/tests/diff_parser` 时得到 `AccessDenied`，未改动任何业务文件。控制器核对后确认 `normalizer.py` 与测试文件均不存在。
+- **处理与教训**：未绕过 fresh-subagent、隔离 worktree 或 RED→GREEN 要求自行代写 T03.1，也未以控制器的所有者权限制造实现成果。需先恢复/授予 implementation subagent 对计划指定 `C:\Users\LiXiaozhou\reviewlens-diff-parser` worktree 的写权限，才能从同一 T03.1 RED 步骤重新派发；该阻塞与 Python 3.12、规格或代码正确性无关。
