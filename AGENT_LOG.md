@@ -240,3 +240,11 @@
 - **用户提供的恢复结果**：用户明确报告 `py -3.12 --version → Python 3.12.10`，并确认 `py --list` 包含 Python 3.12 (64-bit)。
 - **独立复核**：在 worktree 所有者上下文中实际运行 `py -3.12 --version`，输出 `Python 3.12.10`；`py --list` 同时列出 3.12、3.13 与 3.9；`codex/foundation` 当前 HEAD 为 `75e19a9`。普通沙箱会话因不同 Windows 身份无法访问该 worktree 并仅显示 Store 版 3.13，故所有项目命令必须经同一所有者上下文且显式使用 `py -3.12`，不得调用默认 `py` 或 `python`。
 - **下一步**：此前运行时阻塞解除。重新派发一名全新 T01.1 implementation subagent，从失败测试开始执行 RED → GREEN → REFACTOR；其后仍须完成规约符合性评审与代码质量评审，任何成功结论均以前述 Python 3.12 实际输出为证。
+
+## 2026-08-09 11:01:03 +08:00 — 阶段：T01.1 完成 / 真实 TDD 与双阶段评审
+
+- **Task / subagent**：fresh implementation subagent 在 `codex/foundation` 的 T01.1 实现 `c3e640bd44b42cec1751d3a19c9722f1040e092d`（`feat(api): bootstrap explicit app factory`）。范围仅含 `apps/api` 的 package metadata、精确锁文件、显式设置模型/工厂与一个启动合同测试；未进入 T01.2–T01.4。
+- **运行时与 TDD 证据**：所有项目 Python 命令显式使用 `py -3.12`；所有者上下文为 Python 3.12.10。RED：先只创建测试与元数据，`py -3.12 -m pytest tests/test_app_bootstrap.py::test_create_app_preserves_explicit_private_mode -q` 因 `ModuleNotFoundError: No module named 'app'` 失败。GREEN：最小 `AppSettings`/`create_app(settings)` 后同一命令输出 `1 passed in 0.53s`；最小重构无额外改动。控制器复跑聚焦命令得到 `1 passed in 0.53s`，并复跑当前后端全量测试 `py -3.12 -m pytest -q`，输出 `1 passed in 0.51s`。
+- **规约符合性评审**：fresh reviewer 基于 T01.1 简报、实现报告与提交差异包批准；确认五项计划资产、`>=3.12,<3.13` 和有上界依赖、`private|demo`、显式注入、`app.state.settings.mode`、无环境读取、无 T01.3/T01.4 越界以及真实锁文件均符合。Critical/Important/Minor：均无。
+- **代码质量评审**：另一位 fresh reviewer 批准；确认 Pydantic/FastAPI 使用、真实行为测试、依赖/锁文件卫生、最小范围和可维护性均合格。Critical/Important/Minor：均无。
+- **人工干预与教训**：用户明确解除 owner-context 的 Python 3.12 执行权限；普通沙箱身份仍只见 3.13，因此后续项目 Python 命令必须继续显式走 `py -3.12` 与所有者上下文。Windows pip 的 console-script PATH warning 不影响 `py -3.12 -m ...` 命令，未把它伪称为无警告环境。
