@@ -256,3 +256,11 @@
 - **规约符合性审查与修复轮**：Fresh spec reviewer 首轮拒绝批准，指出直接依赖 `vitest 3.2.4` 有 Critical 公告、`vite 7.0.6` 有 High 公告；均有非破坏性修复版本。按 Critical gate 将同一实现 subagent 恢复到 fix round 1，只精确升级为 `vitest 3.2.7` 与 `vite 7.3.6`、重生成 `package-lock.json`，提交 `f0759d4` (`chore(web): patch vite and vitest`)。控制器独立复跑聚焦测试和完整测试，均为 1/1 通过；`npm.cmd audit --json` 退出码 0，high=0、critical=0、total=0。新的 fresh spec re-reviewer 批准，Critical/Important/Minor 均无。
 - **代码质量审查**：另一名 fresh quality reviewer 审查完整 T01.2 范围 `a8c3d5f..f0759d4` 后批准，确认语义化静态 shell、真实可访问性查询测试、精确锁定版本和无后续模式行为；Critical/Important/Minor 均无。
 - **过程证据与教训**：审查包、原始 audit JSON、fix-round 审查包和 implementation report 均保存在 Git 忽略的 `.superpowers/sdd/PLAN/`。实施中首次依赖安装曾超时，未把超时伪称为完成；仅在真实完成、测试与 audit 重跑后继续。规则要求的先规约符合性、再代码质量审查已执行；T01.3/T01.4 尚未开始。
+
+## 2026-08-09 18:42:32 +08:00 — 阶段：T01.3 完成 / 配置错误脱敏修复与双阶段审查
+
+- **Task / subagent**：T01.3 仅在 `apps/api/app/config/settings.py` 与 `apps/api/tests/test_app_bootstrap.py` 增加 `load_settings(env)` 及其真实测试；`create_app(settings)` 未改变，未实现 `create_runtime_app()` 或其他 T01.4 行为。初始实现提交为 `3d028f4` (`feat(api): load app mode settings`)；修复提交为 `d41d6e0` (`fix(api): redact app mode configuration errors`)。
+- **真实 RED → GREEN → REFACTOR 证据**：初始 RED 使用 `py -3.12 -m pytest tests/test_app_bootstrap.py::test_load_settings_rejects_unknown_app_mode -q`，测试收集因缺少 `load_settings` 报 `ImportError`。初始聚焦 GREEN 为 `1 passed in 0.56s`，当时全量后端套件为 `4 passed in 0.57s`。规约审查发现 Pydantic `ValidationError` 会回显任意 `input_value` 后，修复轮先补齐缺失和非法值的固定消息断言；两条修复测试在旧实现下真实 RED（`2 failed in 0.90s`，输出显示 `input_value='untrusted-public-mode'` 与 `input_value=None`）。修复后，`py -3.12 -m pytest` 聚焦修复测试为 `2 passed in 0.56s`，全量后端套件为 `5 passed in 0.63s`。
+- **安全修复与建议采纳**：采纳 fresh spec reviewer 的 Critical/Important 意见：不再把原始 `APP_MODE` 交给会回显输入的 Pydantic 错误路径。`load_settings` 先只接受精确 `private`/`demo`，其他值和缺失值均抛出固定文本的 `StartupConfigurationError`，测试断言错误文本不包含非法输入。该错误不含凭据或原始环境值。
+- **两阶段审查**：初始 fresh spec review 为 NEEDS_FIXES（Critical：错误输入回显；Important：缺失值与无回显测试不足）。同一 task 的 fix round 后由新的 fresh spec re-review 批准，Critical/Important/Minor 均无；随后 fresh quality reviewer 批准，确认范围、类型、可维护性、测试和无 T01.4 越界，Critical/Important/Minor 均无。
+- **人工干预、环境偏离与教训**：所有 Python 命令继续显式使用所有者上下文的 `py -3.12`，未使用 3.13。实施智能体可修改 worktree 文件，却因 `index.lock` 权限被拒无法执行普通 `git add`；控制器只以所有者 Git 权限提交已由实施智能体产生、且已独立验证的两文件差异，未代写业务代码。部分智能体的所有者命令队列无响应时，控制器如实重跑相同的 Python 3.12 验证；不把排队或权限问题伪称为测试结果。T01.4 尚未开始。
