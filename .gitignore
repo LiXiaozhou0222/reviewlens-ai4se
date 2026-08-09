@@ -29,3 +29,6 @@ Thumbs.db
 # Runtime data
 data/
 logs/
+
+# Local Superpowers execution artifacts
+.superpowers/
