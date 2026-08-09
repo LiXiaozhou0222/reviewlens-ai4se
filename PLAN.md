@@ -168,7 +168,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | T02.1 | `app/models/domain.py`、`tests/models/test_domain_contracts.py`：只定义 `ReviewMode`、Severity、Source、AI 状态。<br>**真实完成提交：** `9d13a90` (`feat(api): add domain vocabularies`)；2026-08-09 经规约符合性与代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/models/test_domain_contracts.py::test_review_mode_and_severity_values_are_fixed -q`；枚举或值缺失。 | 同一命令；`1 passed`。 |
 | T02.2 | `app/models/errors.py`、`tests/models/test_error_contracts.py`：只定义稳定公开错误代码。<br>**真实完成提交：** `4aee17c` (`feat(api): add public error codes`)；2026-08-09 经规约符合性与代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/models/test_error_contracts.py::test_input_error_codes_are_stable -q`；代码缺失或变化。 | 同一命令；`1 passed`。 |
-| T02.3 | `app/models/api.py`、`tests/models/test_domain_contracts.py`：只定义 `FindingDraft`/`SanitizedFinding`/`ReportView` 的必需字段。 | `cd apps/api; pytest tests/models/test_domain_contracts.py::test_report_view_requires_sanitized_findings -q`；模型不存在或接受 draft。 | 同一命令；`1 passed`。 |
+| T02.3 | `app/models/api.py`、`tests/models/test_domain_contracts.py`：只定义 `FindingDraft`/`SanitizedFinding`/`ReportView` 的必需字段。<br>**真实完成提交：** `54409db` (`feat(api): add sanitized report contracts`)；2026-08-09 经规约符合性与代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/models/test_domain_contracts.py::test_report_view_requires_sanitized_findings -q`；模型不存在或接受 draft。 | 同一命令；`1 passed`。 |
 | T02.4 | `app/config/mode_policy.py`、`tests/models/test_error_contracts.py`：只定义 Demo 禁用能力矩阵。 | `cd apps/api; pytest tests/models/test_error_contracts.py::test_demo_disables_private_features -q`；Demo 未禁用私有能力。 | 同一命令；`1 passed`。 |
 
 ### M03 — Diff 规范化与解析

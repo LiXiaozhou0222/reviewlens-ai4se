@@ -286,3 +286,10 @@
 - **真实 RED → GREEN → REFACTOR 证据**：先只写测试后，所有者 Python 3.12 的计划聚焦命令真实 RED 为 `ModuleNotFoundError: No module named 'app.models.errors'`（`1 error in 0.24s`）。最小枚举写入后，控制器的首次 GREEN 复验失败：测试将完整 11 项枚举直接与 5 项输入错误子集比较，输出显示 6 个合法额外项。未盲改生产代码；按 `systematic-debugging` 完成根因调查，确认错误来自测试投影而非错误词汇。原实施智能体仅将输入测试改为投影五个具名成员，完整 11 项仍由第二个测试覆盖。修复后，聚焦 Python 3.12 测试为 `1 passed in 0.03s`，全量后端套件为 `10 passed in 0.58s`。
 - **两阶段审查**：Fresh spec reviewer 批准，确认 11 项和五项输入子集均精确、无 HTTP/API/policy 越界；Fresh quality reviewer 批准，确认 `StrEnum`、清晰测试边界、命名/格式和根因修复最小化均合格。两轮 Critical/Important/Minor 均无。
 - **人工干预与教训**：实施智能体的默认身份不能发现 Python 3.12，但在所有者上下文中获得真实 RED；没有把该身份限制误称为项目运行时阻塞。控制器独立验证并以所有者 Git 权限提交 agent 产生的两文件。测试若同时需要“子集”和“全集”合同，必须显式投影子集；不能以全枚举迭代替代子集断言。
+
+## 2026-08-09 20:54:08 +08:00 — 阶段：T02.3 完成 / 已脱敏报告合同与双阶段审查
+
+- **Task / subagent**：Fresh implementation subagent 在 T02.3 仅创建 `apps/api/app/models/api.py` 并扩展既有 `apps/api/tests/models/test_domain_contracts.py`。提交 `54409db` (`feat(api): add sanitized report contracts`) 定义 request-memory `FindingDraft`、跨持久化/API/导出/日志边界的 `SanitizedFinding`，以及仅接受已脱敏 Finding 的 `ReportView`；没有实现脱敏算法、数据库、路由或其他后续能力。
+- **真实 RED → GREEN → REFACTOR 证据**：先写入真实合同测试后，所有者 Python 3.12 的聚焦 RED 为 `ModuleNotFoundError: No module named 'app.models.api'`（`1 error in 0.26s`）。最小 Pydantic 模型写入后，控制器独立运行聚焦命令得到 `1 passed in 0.17s`，运行 `py -3.12 -m pytest -q` 得到 `11 passed in 0.57s`。
+- **安全合同与测试**：三种 Pydantic v2 模型都使用 `ConfigDict(extra="forbid")`。`FindingDraft` 的 `raw_excerpt` 不属于已脱敏模型；`SanitizedFinding` 要求 `excerpt`、`redacted`、`redaction_version` 和可选类别；测试实际构造 draft 并确认 `ReportView.findings` 拒绝它，构造已脱敏对象并确认接受，同时确认 `SanitizedFinding` 拒绝额外 `raw_excerpt`。测试数据均为非敏感占位文本。
+- **两阶段审查**：Fresh spec reviewer 批准，确认字段、raw/sanitized 边界与无 M06/M07 越界；fresh quality reviewer 批准，确认 Pydantic 用法、类型、真实拒绝路径、可维护性和最小范围。两轮 Critical/Important/Minor 均无。
