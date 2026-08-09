@@ -1,3 +1,5 @@
+from app.config.mode_policy import ModeCapabilities, mode_capabilities
+from app.models.domain import ReviewMode
 from app.models.errors import PublicErrorCode
 
 
@@ -33,3 +35,14 @@ def test_complete_public_error_code_vocabulary_is_stable() -> None:
         ("AI_INVALID_RESPONSE", "AI_INVALID_RESPONSE"),
         ("INTERNAL_ERROR", "INTERNAL_ERROR"),
     ]
+
+
+def test_demo_disables_private_features() -> None:
+    capabilities = mode_capabilities(ReviewMode.DEMO)
+
+    assert capabilities == ModeCapabilities(False, False, False, False, False)
+    assert capabilities.report_persistence is False
+    assert capabilities.report_history is False
+    assert capabilities.ai_retry is False
+    assert capabilities.persistent_export is False
+    assert capabilities.credential_management is False
