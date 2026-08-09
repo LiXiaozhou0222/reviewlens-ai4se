@@ -279,3 +279,10 @@
 - **规约符合性审查**：Fresh spec reviewer 批准，确认四种 `StrEnum` 的成员及 wire values 与 SPEC 一致，触及文件仅两项，未越过 T02.2—T02.4。Critical/Important/Minor：均无。
 - **代码质量审查与停放项**：Fresh quality reviewer 批准，Critical/Important 均无。Minor：测试以枚举迭代断言成员，会忽略将来可能的 alias；本任务当前枚举无 alias，SPEC/简报也未要求 alias 检测，故不为其新增超范围机制。该 minor 已在 SDD 账本停放，留待最终全分支审查复核。
 - **执行环境与教训**：新 M02 worktree 的 `.superpowers/` 初始未被忽略，按 worktree 安全流程先真实提交 `7af34d0` 将其加入 `.gitignore`，再创建 Git 忽略账本。实施智能体的默认身份仍无法发现 Python 3.12；所有有效验证均明确使用 worktree 所有者上下文的 `py -3.12`，未使用 3.13。
+
+## 2026-08-09 20:34:31 +08:00 — 阶段：T02.2 完成 / 公开错误词汇、测试根因修复与双阶段审查
+
+- **Task / subagent**：Fresh implementation subagent 在 T02.2 仅创建 `apps/api/app/models/errors.py` 与 `apps/api/tests/models/test_error_contracts.py`。提交 `4aee17c` (`feat(api): add public error codes`) 定义 `PublicErrorCode` 的 11 个 SPEC 固定大写 wire values；没有添加 HTTP 映射、异常/载荷模型、路由、模式策略、Provider 或其他后续行为。
+- **真实 RED → GREEN → REFACTOR 证据**：先只写测试后，所有者 Python 3.12 的计划聚焦命令真实 RED 为 `ModuleNotFoundError: No module named 'app.models.errors'`（`1 error in 0.24s`）。最小枚举写入后，控制器的首次 GREEN 复验失败：测试将完整 11 项枚举直接与 5 项输入错误子集比较，输出显示 6 个合法额外项。未盲改生产代码；按 `systematic-debugging` 完成根因调查，确认错误来自测试投影而非错误词汇。原实施智能体仅将输入测试改为投影五个具名成员，完整 11 项仍由第二个测试覆盖。修复后，聚焦 Python 3.12 测试为 `1 passed in 0.03s`，全量后端套件为 `10 passed in 0.58s`。
+- **两阶段审查**：Fresh spec reviewer 批准，确认 11 项和五项输入子集均精确、无 HTTP/API/policy 越界；Fresh quality reviewer 批准，确认 `StrEnum`、清晰测试边界、命名/格式和根因修复最小化均合格。两轮 Critical/Important/Minor 均无。
+- **人工干预与教训**：实施智能体的默认身份不能发现 Python 3.12，但在所有者上下文中获得真实 RED；没有把该身份限制误称为项目运行时阻塞。控制器独立验证并以所有者 Git 权限提交 agent 产生的两文件。测试若同时需要“子集”和“全集”合同，必须显式投影子集；不能以全枚举迭代替代子集断言。
