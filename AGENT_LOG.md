@@ -429,3 +429,9 @@
 - **真实 TDD：** fresh subagent 只写使用冻结 `ParsedDiff`/`ParsedFile` 统计的 500、499 和 binary-500 测试；控制器 Python 3.12 RED 为缺少 `app.rules.engine`。最小实现后聚焦 `1 passed in 0.21s`、规则套件 `25 passed in 0.24s`、完整后端 `57 passed in 0.62s`。
 - **范围与审查：** `039f421` 只增加 `scan_gen_005`，按 `added_line_count + deleted_line_count >= 500` 生成每文件一个 GEN-005，二进制跳过，`new_line=None` 且 excerpt 为空；fresh spec 和 quality review 均 APPROVED，无可操作问题。
 - **教训：** 规模提示是完整变更元数据例外，必须明确作为 file-level Finding，不得为了 UI 便利捏造代码行号或复制任何 Diff 片段。
+
+## 2026-08-10 23:15:00 +08:00 — 阶段：T04.7 完成 / 新增行范围跨规则回归
+
+- **真实回归验证：** fresh subagent 只增加删除、hunk context 和文件头三类 synthetic Diff 测试，分别含虚构 API_KEY、rm-rf、TODO、HTTP 文本。因生产规则已正确实现，控制器临时让 GEN-001 读取删除 hunk 行；Python 3.12 目标测试真实失败并产生 Finding，随后立即还原 added-lines-only 循环。
+- **最终证据与审查：** 范围套件 `3 passed in 0.19s`、规则套件 `28 passed in 0.24s`、完整后端 `60 passed in 0.53s`。`079d018` 仅含测试文件；fresh spec 和 quality reviewer 均 APPROVED，无可操作问题。
+- **教训：** “只新增行”必须在每条通用规则的共同边界被集成测试覆盖，不能仅依赖每个规则独立实现的相同循环模式。

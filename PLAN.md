@@ -203,7 +203,7 @@ flowchart LR
 | T04.4 | 同上：仅 GEN-003 新增 TODO/FIXME/HACK。<br>**真实完成提交：** `4e612c4` (`feat(api): detect added work markers`)；2026-08-10 经规约符合性与代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/rules/test_general_rules.py::test_gen_003_finds_added_todo_marker -q`；缺少 `scan_gen_003`。 | 聚焦：`1 passed`；规则套件：`16 passed`；完整后端：`48 passed`。 |
 | T04.5 | 同上：仅 GEN-004 非 loopback `http://` 硬编码地址。<br>**真实完成提交：** `12cf519` (`feat(api): detect non-loopback http`)；2026-08-10 经规约符合性与代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/rules/test_general_rules.py::test_gen_004_ignores_loopback_http -q`；缺少 `scan_gen_004`。 | 聚焦：`5 passed`；规则套件：`24 passed`；完整后端：`56 passed`。 |
 | T04.6 | `rules/engine.py`：仅 GEN-005 文件级变更规模，行号为 `null`。<br>**真实完成提交：** `039f421` (`feat(api): detect oversized file changes`)；2026-08-10 经规约符合性与代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/rules/test_general_rules.py::test_gen_005_is_file_level -q`；缺少 `app.rules.engine`。 | 聚焦：`1 passed`；规则套件：`25 passed`；完整后端：`57 passed`。 |
-| T04.7 | `tests/rules/test_added_line_scope.py`：删除、上下文、文件头均不得触发 GEN-001…GEN-004。 | `cd apps/api; pytest tests/rules/test_added_line_scope.py::test_deleted_secret_does_not_create_finding -q`；删除行产生 Finding。 | 同一命令；`1 passed`。 |
+| T04.7 | `tests/rules/test_added_line_scope.py`：删除、上下文、文件头均不得触发 GEN-001…GEN-004。<br>**真实完成提交：** `079d018` (`test(api): enforce added-line rule scope`)；2026-08-10 经规约符合性与代码质量审查批准。 | 受控临时 mutation 将删除 hunk 行纳入 GEN-001，`py -3.12 -m pytest tests/rules/test_added_line_scope.py::test_deleted_secret_does_not_create_finding -q` 失败并产生 Finding。 | 范围套件：`3 passed`；规则套件：`28 passed`；完整后端：`60 passed`。 |
 
 ### M05 — JS/TS 规则、去重与等级
 
