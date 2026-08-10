@@ -7,7 +7,7 @@ from app.models.domain import FindingSource, Severity
 from app.diff_parser.parser import parse_unified_diff
 from app.rules import catalog
 from app.rules.catalog import GENERAL_RULES, RULESET_VERSION
-from app.rules.general import scan_gen_001, scan_gen_002
+from app.rules.general import scan_gen_001, scan_gen_002, scan_gen_003
 
 
 def test_ruleset_catalog_is_fixed() -> None:
@@ -259,3 +259,77 @@ def test_gen_002_ignores_missing_or_delimited_command_target(
     )
 
     assert scan_gen_002(parsed_diff) == ()
+
+
+def test_gen_003_finds_added_todo_marker() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/widget.ts b/src/widget.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/widget.ts",
+                "+++ b/src/widget.ts",
+                "@@ -7,2 +7,3 @@",
+                " export const widget = true;",
+                "+// TODO: replace this fixture",
+                " export const enabled = false;",
+            ]
+        )
+    )
+
+    findings = scan_gen_003(parsed_diff)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.rule_id == "GEN-003"
+    assert finding.rule_version == RULESET_VERSION
+    assert finding.source is FindingSource.GENERAL_RULE
+    assert finding.severity is Severity.LOW
+    assert finding.path == "src/widget.ts"
+    assert finding.new_line == 8
+    assert finding.raw_excerpt == "// TODO: replace this fixture"
+    assert finding.message == "A TODO, FIXME, or HACK marker was added."
+    assert finding.suggestion == (
+        "Resolve the work item or track it outside the code change."
+    )
+
+
+@pytest.mark.parametrize("marker", ["FIXME", "HACK"])
+def test_gen_003_finds_added_fixme_or_hack_marker(marker: str) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/widget.ts b/src/widget.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/widget.ts",
+                "+++ b/src/widget.ts",
+                "@@ -1 +1,2 @@",
+                " export const widget = true;",
+                f"+// {marker} replace this fixture",
+            ]
+        )
+    )
+
+    findings = scan_gen_003(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "GEN-003"
+    assert findings[0].raw_excerpt == f"// {marker} replace this fixture"
+
+
+def test_gen_003_ignores_marker_substring_in_added_identifier() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/widget.ts b/src/widget.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/widget.ts",
+                "+++ b/src/widget.ts",
+                "@@ -1 +1,2 @@",
+                " export const widget = true;",
+                "+const hacker = true;",
+            ]
+        )
+    )
+
+    assert scan_gen_003(parsed_diff) == ()
