@@ -1,7 +1,7 @@
 import pytest
 
 from app.diff_parser.normalizer import DiffNormalizationError
-from app.diff_parser.parser import AddedLine, parse_unified_diff
+from app.diff_parser.parser import AddedLine, HunkLine, ParsedHunk, parse_unified_diff
 from app.models.errors import PublicErrorCode
 
 
@@ -96,3 +96,32 @@ def test_file_header_is_not_an_added_code_line() -> None:
 
     assert parsed_file.change_type == "modified"
     assert parsed_file.added_lines == (AddedLine("++ content = True", 2),)
+
+
+def test_parsed_hunk_retains_context_deleted_added_lines_and_counts() -> None:
+    parsed = parse_unified_diff(
+        """diff --git a/src/example.py b/src/example.py
+--- a/src/example.py
++++ b/src/example.py
+@@ -10,2 +10,2 @@
+ context = True
+-removed = True
++added = True
+"""
+    )
+
+    parsed_file = parsed.files[0]
+    assert parsed_file.hunks == (
+        ParsedHunk(
+            old_start=10,
+            new_start=10,
+            lines=(
+                HunkLine("context", "context = True", 10, 10),
+                HunkLine("deleted", "removed = True", 11, None),
+                HunkLine("added", "added = True", None, 11),
+            ),
+        ),
+    )
+    assert parsed_file.added_lines == (AddedLine("added = True", 11),)
+    assert parsed_file.added_line_count == 1
+    assert parsed_file.deleted_line_count == 1
