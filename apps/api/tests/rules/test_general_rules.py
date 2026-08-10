@@ -208,7 +208,7 @@ def test_gen_002_ignores_rm_without_recursive_force_flags() -> None:
                 "+++ b/scripts/cleanup.sh",
                 "@@ -1 +1,2 @@",
                 " keep_fixture=true",
-                "rm fixture.txt",
+                "+rm fixture.txt",
             ]
         )
     )
