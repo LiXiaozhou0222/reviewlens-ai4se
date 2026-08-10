@@ -324,3 +324,9 @@
 - **Task / subagent**：在 `codex/diff-parser` worktree，fresh implementation subagent 完成 `apps/api/app/diff_parser/normalizer.py` 与既有 normalizer 测试的最小扩展；提交 `fdaa593` (`feat(api): normalize diff content and digest`)。新增冻结 `NormalizedDiff(text, sha256)` 与 `normalize_diff(raw)`，复用 T03.1 的严格 UTF-8 校验，移除恰好一个首位 BOM，将 CRLF 和剩余 CR 统一为 LF，并对规范化 UTF-8 字节计算小写 SHA-256。
 - **真实 TDD 与验证**：此前只保留 T03.2 RED 测试；所有者 Python 3.12 真实运行 `test_crlf_and_lf_have_the_same_digest`，因 `normalize_diff` 不存在产生预期 `AttributeError`。最小实现后，控制器独立验证聚焦 GREEN `1 passed in 0.13s`、normalizer 套件 `5 passed in 0.04s`、全套后端 `18 passed in 0.89s`；全程未使用 Python 3.13。
 - **两阶段审查**：fresh spec reviewer 批准，确认错误码保持、单个 BOM、CRLF/CR 规范化、摘要范围与无越界；fresh quality reviewer 批准，确认冻结模型、异常复用、测试覆盖与无额外依赖。两轮无 Critical、Important 或 Minor。
+
+## 2026-08-10 10:45:00 +08:00 — 阶段：T03.3 完成 / 输入大小与行数硬限制
+
+- **Task / subagent**：fresh implementation subagent 在 `normalizer.py` 中将 500 KB 固定为 `MAX_DIFF_BYTES=512_000`（500×1024），将行数固定为 `MAX_DIFF_LINES=5_000`，扩展 `NormalizedDiff` 为原始字节数与规范化逻辑行数。提交 `4808448` (`feat(api): enforce diff input limits`)；未实现解析、路由、持久化或截断。
+- **真实 TDD 与验证**：先新增超 5,000 行、超 512,000 字节、两个精确边界和计数测试；所有者 Python 3.12 的 RED 因缺少 `MAX_DIFF_LINES` 产生预期 `AttributeError`。最小实现后独立验证聚焦 `1 passed in 0.03s`、normalizer `9 passed in 0.03s`、全套后端 `22 passed in 0.53s`。超过字节上限在解码前以 `INPUT_TOO_LARGE` 拒绝；规范化后的 `splitlines()` 超过行数以 `LINE_LIMIT_EXCEEDED` 拒绝；两者均无静默截断。
+- **两阶段审查**：fresh spec reviewer 批准，确认常量、顺序、边界和错误码；fresh quality reviewer 批准，确认逻辑行计数、测试、可读性和最小范围。均无 Critical、Important 或 Minor。
