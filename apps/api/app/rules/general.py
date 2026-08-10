@@ -10,19 +10,22 @@ _GEN_002 = next(rule for rule in GENERAL_RULES if rule.rule_id == "GEN-002")
 _GEN_003 = next(rule for rule in GENERAL_RULES if rule.rule_id == "GEN-003")
 _GEN_004 = next(rule for rule in GENERAL_RULES if rule.rule_id == "GEN-004")
 _CREDENTIAL_LITERAL = re.compile(
-    r"""(?i)(?<![A-Za-z0-9_])(?:["'])?(?:api_key|apikey|token|access_token|auth_token|password|passwd|secret)(?:["'])?(?![A-Za-z0-9_])\s*[:=]\s*(?P<quote>["'])(?P<value>(?![^"']*(?:\$\{|\{\{))[^"']+)(?P=quote)"""
+    r"""(?i)(?<![A-Za-z0-9_])(?:["'])?(?:api_key|apikey|token|access_token|auth_token|password|passwd|secret)(?:["'])?(?![A-Za-z0-9_])\s*[:=]\s*(?P<quote>["'])(?P<value>(?![^"']*(?:\$\{|\$[A-Za-z_][A-Za-z0-9_]*|\{\{))[^"']+)(?P=quote)"""
 )
 _DESTRUCTIVE_OPERATION = re.compile(
     r"""(?ix)
     ^\s*(?:
         rm\s+-(?:rf|fr)\s+[^\s;#|&-]\S*
-        |(?:drop|truncate)\s+(?:table|database)\b
+        |(?:drop|truncate)\s+(?:table|database)\s+[^\s;#|&]\S*
         |mkfs(?:\.[a-z0-9_-]+)?\s+[^\s;#|&-]\S*
     )
     """
 )
 _MAINTENANCE_MARKER = re.compile(r"(?i)(?<!\w)(?:todo|fixme|hack)(?!\w)")
-_HTTP_URL = re.compile(r'''http://(?P<host>\[[^\]\s]+\]|[^/\s"'<>?#]+)''', re.IGNORECASE)
+_HTTP_URL = re.compile(
+    r'''http://(?!\$\{|\$[A-Za-z_]|\{\{)(?P<host>\[[^\]\s]+\]|[^/\s"'<>?#]+)''',
+    re.IGNORECASE,
+)
 
 
 def scan_gen_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:

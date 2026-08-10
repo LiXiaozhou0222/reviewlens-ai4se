@@ -142,6 +142,24 @@ def test_gen_001_ignores_added_template_expression() -> None:
     assert scan_gen_001(parsed_diff) == ()
 
 
+def test_gen_001_ignores_quoted_environment_variable_reference() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/config/settings.sh b/config/settings.sh",
+                "index 1234567..89abcde 100644",
+                "--- a/config/settings.sh",
+                "+++ b/config/settings.sh",
+                "@@ -1 +1,2 @@",
+                " DEBUG=false",
+                '+PASSWORD="$DB_PASSWORD"',
+            ]
+        )
+    )
+
+    assert scan_gen_001(parsed_diff) == ()
+
+
 def test_gen_002_finds_added_destructive_command() -> None:
     parsed_diff = parse_unified_diff(
         "\n".join(
@@ -254,6 +272,31 @@ def test_gen_002_ignores_missing_or_delimited_command_target(
                 "+++ b/scripts/cleanup.sh",
                 "@@ -1 +1,2 @@",
                 " keep_fixture=true",
+                f"+{destructive_text}",
+            ]
+        )
+    )
+
+    assert scan_gen_002(parsed_diff) == ()
+
+
+@pytest.mark.parametrize(
+    "destructive_text",
+    [
+        "DROP TABLE;",
+        "TRUNCATE DATABASE # note",
+    ],
+)
+def test_gen_002_ignores_targetless_sql_operation(destructive_text: str) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/db/migration.sql b/db/migration.sql",
+                "index 1234567..89abcde 100644",
+                "--- a/db/migration.sql",
+                "+++ b/db/migration.sql",
+                "@@ -1 +1,2 @@",
+                " BEGIN;",
                 f"+{destructive_text}",
             ]
         )
@@ -406,6 +449,24 @@ def test_gen_004_ignores_added_https_address() -> None:
                 "@@ -1 +1,2 @@",
                 " timeout = 5",
                 '+API_URL = "https://example.test/api"',
+            ]
+        )
+    )
+
+    assert scan_gen_004(parsed_diff) == ()
+
+
+def test_gen_004_ignores_template_environment_host() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/client.py b/src/client.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/client.py",
+                "+++ b/src/client.py",
+                "@@ -1 +1,2 @@",
+                " timeout = 5",
+                '+API_URL = "http://${HOST}/api"',
             ]
         )
     )
