@@ -176,6 +176,8 @@ flowchart LR
 **Branch/worktree：** `codex/diff-parser` / `.worktrees/diff-parser`（原 `../reviewlens-diff-parser` 因实现 subagent 无写权限，经用户于 2026-08-09 明确授权后迁移；仍为独立 Git 忽略 worktree）
 **Depends on：** M02
 
+**模块全分支复核：** 2026-08-10，独立审查覆盖 `650db9a..8a67245` 的 M03 完整差异；先前跨任务发现的 hunk/统计、生命周期/binary 和非 LF 行边界缺口均已由 T03.7–T03.9 修复。最终结论为 APPROVED、无可操作问题；控制器随后以 Python 3.12 运行完整后端套件，`32 passed in 0.57s`。
+
 | Task | 文件与最小目标 | RED / 预期 | GREEN / 预期 |
 | --- | --- | --- | --- |
 | T03.1 | `diff_parser/normalizer.py`、`tests/diff_parser/test_normalizer.py`：空输入与 UTF-8 拒绝。<br>**真实完成提交：** `b86e296` (`feat(api): validate diff input encoding`)；2026-08-09 经规约符合性与代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/diff_parser/test_normalizer.py::test_rejects_empty_input -q`；normalizer 缺失或未拒绝。 | 同一命令；`1 passed`。 |

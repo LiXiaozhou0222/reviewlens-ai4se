@@ -381,3 +381,10 @@
 - **实现与提交：** `0428aea` (`fix(api): preserve non-lf diff content`) 令 normalizer 仅按 LF 和未终止末行计数，parser 仅以 `\n` 迭代和验证 Diff 行；U+2028/form feed 仍保留在新增行内容中。
 - **两阶段审查：** fresh spec reviewer APPROVED，确认 LF-only、末行和范围合同；首次 quality reviewer 被系统中断且未产生结论，因此重新派发 fresh quality re-review。该复审检查 `000110b..0428aea`、当前四个相关文件及 `git diff --check` 后 APPROVED，无 Critical、Important 或 Minor。
 - **教训：** 文本 API 的默认“逻辑行”定义未必等同于 unified Diff 的 LF 物理行定义。对于安全扫描的输入边界，测试 fixture 必须包含真实 Unicode 字符，不能用外观相似的转义字节代替。
+
+## 2026-08-10 18:40:46 +08:00 — 阶段：M03 最终全分支复核完成
+
+- **Task / skill / context：** 在 M03 的 T03.1–T03.9 全部通过任务级 TDD 和两阶段审查后，控制器依 `superpowers:subagent-driven-development` 与 `requesting-code-review` 派发 fresh 高能力审查智能体，对 `650db9a..8a67245` 的 M03 完整差异作只读复核；审查包明确约束 UTF-8、BOM/换行/摘要、硬上限、hunk 行来源与坐标、生命周期/binary 分离和格式拒绝合同。
+- **审查结论：** final reviewer 返回 **APPROVED**，无 Critical、Important 或 Minor。它确认 normalizer 的 UTF-8、单 BOM、LF、摘要、限额和末行语义，以及 parser 的 hunk provenance/坐标/计数、状态重置、binary 分离和无效文本拒绝；精确范围 `git diff --check` 无问题。审查未修改文件且没有重跑测试。
+- **独立复验：** 控制器随后在所有者上下文显式执行 `py -3.12 -m pytest -q`，完整后端返回 `32 passed in 0.57s`。未使用默认 Python 3.13；仅过程文档待提交。
+- **教训：** 任务级评审验证局部最小合同，主要模块仍必须有一次覆盖完整中间模型和所有任务交界的全分支复核；这次复核是 M03 可供下游规则模块依赖的最终门禁，而不是额外实现工作。
