@@ -41,7 +41,7 @@ def normalize_diff(raw: bytes) -> NormalizedDiff:
     if text.startswith("\ufeff"):
         text = text[1:]
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    line_count = len(text.splitlines())
+    line_count = text.count("\n") + (1 if text and not text.endswith("\n") else 0)
     if line_count > MAX_DIFF_LINES:
         raise DiffNormalizationError(PublicErrorCode.LINE_LIMIT_EXCEEDED)
 

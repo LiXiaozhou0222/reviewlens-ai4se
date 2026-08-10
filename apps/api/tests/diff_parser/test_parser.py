@@ -142,3 +142,11 @@ def test_parsed_hunk_retains_context_deleted_added_lines_and_counts() -> None:
     assert parsed_file.added_lines == (AddedLine("added = True", 11),)
     assert parsed_file.added_line_count == 1
     assert parsed_file.deleted_line_count == 1
+
+
+def test_parser_preserves_non_lf_separators_inside_added_line() -> None:
+    parsed = parse_unified_diff(
+        "diff --git a/src/x.js b/src/x.js\n--- a/src/x.js\n+++ b/src/x.js\n"
+        "@@ -1 +1 @@\n+token\u2028continued\fvalue\n"
+    )
+    assert parsed.files[0].added_lines == (AddedLine("token\u2028continued\fvalue", 1),)

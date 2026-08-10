@@ -49,7 +49,7 @@ _GIT_DIFF_HEADER = re.compile(r"diff --git a/\S+ b/\S+$")
 
 
 def parse_unified_diff(text: str) -> ParsedDiff:
-    if not any(_GIT_DIFF_HEADER.fullmatch(line) for line in text.splitlines()):
+    if not any(_GIT_DIFF_HEADER.fullmatch(line) for line in text.split("\n")):
         raise DiffNormalizationError(PublicErrorCode.INVALID_DIFF_FORMAT)
 
     files: list[ParsedFile] = []
@@ -97,7 +97,7 @@ def parse_unified_diff(text: str) -> ParsedDiff:
                 )
             )
 
-    for line in text.splitlines():
+    for line in text.split("\n"):
         if _GIT_DIFF_HEADER.fullmatch(line):
             finish_file()
             paths = line.split()

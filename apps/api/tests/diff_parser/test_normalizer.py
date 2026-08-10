@@ -1,7 +1,7 @@
 import pytest
 
 from app.diff_parser import normalizer
-from app.diff_parser.normalizer import DiffNormalizationError, decode_utf8_diff
+from app.diff_parser.normalizer import DiffNormalizationError, decode_utf8_diff, normalize_diff
 from app.models.errors import PublicErrorCode
 
 
@@ -75,3 +75,9 @@ def test_accepts_exact_line_limit_and_reports_counts() -> None:
 
     assert result.byte_count == len(raw)
     assert result.line_count == normalizer.MAX_DIFF_LINES
+
+
+def test_only_lf_is_a_normalized_diff_line_boundary() -> None:
+    normalized = normalize_diff(b"alpha" + "\u2028".encode("utf-8") + b"beta\fgamma\n")
+    assert normalized.text == "alpha\u2028beta\fgamma\n"
+    assert normalized.line_count == 1
