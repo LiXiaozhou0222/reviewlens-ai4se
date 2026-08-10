@@ -7,7 +7,7 @@ from app.models.domain import FindingSource, Severity
 from app.diff_parser.parser import parse_unified_diff
 from app.rules import catalog
 from app.rules.catalog import GENERAL_RULES, RULESET_VERSION
-from app.rules.general import scan_gen_001, scan_gen_002, scan_gen_003
+from app.rules.general import scan_gen_001, scan_gen_002, scan_gen_003, scan_gen_004
 
 
 def test_ruleset_catalog_is_fixed() -> None:
@@ -333,3 +333,102 @@ def test_gen_003_ignores_marker_substring_in_added_identifier() -> None:
     )
 
     assert scan_gen_003(parsed_diff) == ()
+
+
+def test_gen_004_finds_added_non_loopback_http_address() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/client.py b/src/client.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/client.py",
+                "+++ b/src/client.py",
+                "@@ -8,2 +8,3 @@",
+                " timeout = 5",
+                '+API_URL = "http://example.test/api"',
+                " retries = 3",
+            ]
+        )
+    )
+
+    findings = scan_gen_004(parsed_diff)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.rule_id == "GEN-004"
+    assert finding.rule_version == RULESET_VERSION
+    assert finding.source is FindingSource.GENERAL_RULE
+    assert finding.severity is Severity.MEDIUM
+    assert finding.path == "src/client.py"
+    assert finding.new_line == 9
+    assert finding.raw_excerpt == 'API_URL = "http://example.test/api"'
+    assert finding.message == "A non-loopback plain HTTP address was added."
+    assert finding.suggestion == "Use HTTPS unless plain HTTP is explicitly required."
+
+
+@pytest.mark.parametrize(
+    "address",
+    [
+        "http://localhost/api",
+        "http://LOCALHOST/api",
+        "http://127.0.0.1/api",
+        "http://[::1]/api",
+        "http://::1/api",
+    ],
+)
+def test_gen_004_ignores_loopback_http(address: str) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/client.py b/src/client.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/client.py",
+                "+++ b/src/client.py",
+                "@@ -1 +1,2 @@",
+                " timeout = 5",
+                f'+API_URL = "{address}"',
+            ]
+        )
+    )
+
+    assert scan_gen_004(parsed_diff) == ()
+
+
+def test_gen_004_ignores_added_https_address() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/client.py b/src/client.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/client.py",
+                "+++ b/src/client.py",
+                "@@ -1 +1,2 @@",
+                " timeout = 5",
+                '+API_URL = "https://example.test/api"',
+            ]
+        )
+    )
+
+    assert scan_gen_004(parsed_diff) == ()
+
+
+def test_gen_004_finds_localhost_subdomain_http_address() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/client.py b/src/client.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/client.py",
+                "+++ b/src/client.py",
+                "@@ -1 +1,2 @@",
+                " timeout = 5",
+                '+API_URL = "http://localhost.example.test/api"',
+            ]
+        )
+    )
+
+    findings = scan_gen_004(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "GEN-004"
+    assert findings[0].raw_excerpt == 'API_URL = "http://localhost.example.test/api"'
