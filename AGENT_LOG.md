@@ -352,3 +352,10 @@
 - **实现与提交：** `f485f8c` (`feat(api): reject invalid diff format`) 将已存在的 `DiffNormalizationError` 与 `PublicErrorCode.INVALID_DIFF_FORMAT` 复用于 parser，并以单一 `_GIT_DIFF_HEADER.fullmatch()` 同时控制格式识别和文件段解析；已完成的 modification/rename/delete/binary/hunk 行为未改变。
 - **两阶段审查：** fresh spec reviewer 批准精确错误码、范围和既有合法路径保留；fresh quality reviewer 批准正则控制点、状态行为、错误合同、测试与最小范围。两轮均无 Critical、Important 或 Minor。
 - **人工干预与教训：** subagent 环境仍无法使用项目要求的 Python 3.12，故只由控制器在所有者上下文产生真实 RED/GREEN 证据，且没有退回默认解释器。格式验证应在预期结构的最早边界失败，并复用已经定义的公开错误词汇，而不是创建重复异常或延后到 HTTP 层。
+
+## 2026-08-10 14:22:57 +08:00 — 阶段：M03 全分支复核与计划补项授权
+
+- **Task / skill / context：** M03 的 T03.1–T03.6 均已完成任务级 RED→GREEN→REFACTOR 与两阶段评审后，控制器按 `superpowers:subagent-driven-development` 派发全分支复核，并按 `receiving-code-review` 核对意见与 `SPEC.md` §4.1/§4.2、§5.1 和 `PLAN.md` 共享接口合同；随后使用 `writing-plans` 将经用户授权的缺项拆分为独立微任务。
+- **复核结果：** reviewer 发现 Critical：现有 `ParsedDiff` 未保留 hunk、context/deleted 行、增删统计，无法支撑 GEN-005 与 JS 上下文规则；Critical：新建文件未被识别，`binary` 与生命周期状态混合；Important：`str.splitlines()` 会把 U+2028、form feed 等非 LF 字符错误视为 Diff 行边界。控制器核对确认这些并非新增功能请求，而是已确认 SPEC 的 `hunk`、文件状态、增删统计和仅 CRLF/CR→LF 规范化合同在原 T03.1–T03.6 中漏拆。
+- **用户确认与计划修订：** 用户在本轮明确回复“同意补充”。因此 PLAN 从 107 个正式任务如实增至 110 个，并增加 T03.7（hunk/旧新行号/统计）、T03.8（新增生命周期与独立 binary 标记）和 T03.9（严格 LF 行边界）。该修订未改变 `SPEC.md`，未创建或修改业务代码、测试、Docker、CI 或外部资产。
+- **偏离与教训：** 之前的 task-level review 均忠实核对了各自过窄的 task brief，却不足以证明整个 M03 共享接口合同；此后每个主要模块完成后必须在集成前进行跨任务全分支复核。新增三项仍需各自由 fresh implementation subagent 执行 TDD、双阶段评审和真实提交，当前不将它们计为完成。

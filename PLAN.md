@@ -184,6 +184,9 @@ flowchart LR
 | T03.4 | `diff_parser/parser.py`、`tests/diff_parser/test_parser.py`：合法 unified Diff 与新增行的新文件行号。<br>**真实完成提交：** `cc3055f` (`feat(api): map unified diff added lines`) 与 `325bafc` (`fix(api): preserve plus-prefixed diff additions`)；2026-08-10 经规约符合性审查、质量审查和修复复审批准。 | `cd apps/api; py -3.12 -m pytest tests/diff_parser/test_parser.py::test_maps_added_line_to_new_file_line_number -q`；parser/行号映射缺失。 | 同一命令；`1 passed`。 |
 | T03.5 | 同上：重命名、删除、`+++` 头与 binary 元数据。<br>**真实完成提交：** `bd8421c` (`feat(api): parse diff change metadata`)；2026-08-10 经规约符合性与代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/diff_parser/test_parser.py -q`；重命名、删除、binary 元数据和变更类型缺失。 | 同一命令；`5 passed`（完整后端：`27 passed`）。 |
 | T03.6 | 同上：非 unified Diff 的明确拒绝且不创建报告。<br>**真实完成提交：** `f485f8c` (`feat(api): reject invalid diff format`)；2026-08-10 经规约符合性与代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/diff_parser/test_parser.py::test_rejects_invalid_unified_diff -q`；格式无效内容被接纳。 | 同一命令；`1 passed`（解析器：`6 passed`；完整后端：`28 passed`）。 |
+| T03.7 | `diff_parser/parser.py`、`tests/diff_parser/test_parser.py`：补齐冻结的 `ParsedHunk` 与 hunk 内 `context` / `added` / `deleted` 行记录；每行保留旧/新文件行号（不适用侧为 `null`），每文件保留完整 hunk 元数据、`added_line_count` 和 `deleted_line_count`。既有 `AddedLine` 视图保持可用，且只来自新增行。 | `cd apps/api; py -3.12 -m pytest tests/diff_parser/test_parser.py::test_parsed_hunk_retains_context_deleted_added_lines_and_counts -q`；hunk、旧行号、删除行或统计缺失。 | 同一命令；`1 passed`。 |
+| T03.8 | 同上：将文件生命周期状态固定为 `added` / `modified` / `deleted` / `renamed`，另以独立 `is_binary: bool` 表示二进制能力限制；识别 `new file mode` / `--- /dev/null`，并保留删除或重命名状态，即使文件为 binary。 | `cd apps/api; py -3.12 -m pytest tests/diff_parser/test_parser.py::test_new_binary_file_has_added_status_and_binary_flag -q`；新文件被标为 modified 或 binary 覆盖生命周期状态。 | 同一命令；`1 passed`。 |
+| T03.9 | `diff_parser/normalizer.py`、`diff_parser/parser.py` 与对应测试：规范化后仅 LF 是行边界；`U+2028`、form feed 等合法 UTF-8 内容必须留在同一 Diff 行。行数上限保持 5,000 的既有 trailing-LF 语义，解析器不得漏掉包含这些字符的新增行。 | `cd apps/api; py -3.12 -m pytest tests/diff_parser/test_normalizer.py::test_only_lf_is_a_normalized_diff_line_boundary -q`；非 LF 分隔字符被误计行或切断新增行。 | 同一命令；`1 passed`。 |
 
 ### M04 — 固定通用规则集
 
@@ -468,7 +471,7 @@ R01 不是实现任务，而是所有 M01–M20 与 H01 完成后的顺序检查
 
 ## 9. 本轮计划自检（文档审计，不是实现验证）
 
-- **任务与 step 粒度：** 本计划现有 107 个正式 `Txx.yy` task，编号唯一。T01.1–T20.6 每项限定为一个测试节点、一个最小行为或一个独立交付检查，可由一个 fresh subagent 在一次 session 完成；T01 现含 T01.1–T01.4，新增 runtime bootstrap 合同。该 task 内部的写失败测试、RED、最小实现、GREEN、REFACTOR、review/commit steps 目标为约 2–5 分钟。T01–T20 仅是 PR/worktree 里程碑。
+- **任务与 step 粒度：** 本计划现有 110 个正式 `Txx.yy` task，编号唯一。T01.1–T20.6 每项限定为一个测试节点、一个最小行为或一个独立交付检查，可由一个 fresh subagent 在一次 session 完成；T01 现含 T01.1–T01.4。M03 在 2026-08-10 的全分支复核发现既有 T03.1–T03.6 未拆出已确认的 hunk/统计、生命周期/二进制分离和严格 LF 边界合同；经用户明确授权后补充 T03.7–T03.9。该 task 内部的写失败测试、RED、最小实现、GREEN、REFACTOR、review/commit steps 目标为约 2–5 分钟。T01–T20 仅是 PR/worktree 里程碑。
 - **精确命令：** 所有代码微任务均提供 cwd、pytest/Vitest 节点与 RED/GREEN 预期；设计、人工 Reflection 和外部部署项明确标为非代码或需授权的验证门槛，而不伪造测试。
 - **依赖一致性：** §4 图、表和每个 Mxx 的 `Depends on` 一致；M07 依赖 M02/M06、M08 依赖 M02、M09 依赖 M02/M06/M08、M12 依赖 M01/M02/M08/M11、M14 依赖 M01/M11/M13、M16 依赖 M12/M14/M15、M17 依赖 M12/M16、M18 依赖 M17、M20 依赖 M17/M18、M19 依赖 M17/M18/M20、H01 依赖 M19/M20。
 - **跨文档一致性：** GEN-001…005、JS-001…007、私有 AI retry API、Report 子实体外键、scrypt + AES-256-GCM、`linear-app`/`web-design-guidelines` 门禁及 `create_app`/`load_settings`/`create_runtime_app` 启动合同均与 SPEC 对齐；Demo 不注册 retry 路由。Open Design 门禁和 Probe 01 冷启动门禁均已关闭；用户最终确认和阶段解锁均已取得，当前从 T01 开始。
