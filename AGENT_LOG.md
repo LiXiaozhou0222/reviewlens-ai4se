@@ -344,3 +344,11 @@
 - **实现与提交：** `bd8421c` (`feat(api): parse diff change metadata`) 增加冻结 `ParsedFile.change_type` / `old_path`，在 `diff --git` 边界完成并重置文件状态；识别 `rename from/to`、`+++ /dev/null` 和 `Binary files ... differ`。hunk 外 `+++ b/path` 保持文件元数据，hunk 内 `+++ content` 仍是新增代码行。
 - **两阶段审查：** fresh spec reviewer 基于任务简报、实现报告和提交差异包给出 APPROVED；随后 fresh quality reviewer 独立检查状态泄漏、边界、可读性、测试与范围，同样 APPROVED。两轮均无 Critical、Important 或 Minor。
 - **人工干预与教训：** 普通 subagent 身份仍不能直接发现所有者安装的 Python 3.12，因此测试证据由控制器在明确的 `py -3.12` 所有者上下文产生；实现智能体没有以 3.13 替代。解析器控制元数据与以 `+` 开头的真实内容会重叠，必须以 hunk 状态区分，且每次增加 metadata 路径都需覆盖文件最终收集与状态重置。
+
+## 2026-08-10 14:05:00 +08:00 — 阶段：T03.6 完成 / 非 unified Diff 格式拒绝
+
+- **Task / skill / context：** 在 `codex/diff-parser` 隔离 worktree，fresh implementation subagent 使用 `superpowers:subagent-driven-development` 与 `test-driven-development` 完成 M03 的 T03.6。合同限定为：无 Git `diff --git a/<path> b/<path>` 文件头的纯文本必须在 parser 层返回既有的 `INVALID_DIFF_FORMAT`；不实现完整畸形补丁语法、HTTP 映射、报告创建或持久化。
+- **真实 RED → GREEN → REFACTOR：** 测试先行后，所有者上下文显式运行 `py -3.12 -m pytest tests/diff_parser/test_parser.py::test_rejects_invalid_unified_diff -q` 得到 `1 failed in 0.16s`，失败为 `DID NOT RAISE DiffNormalizationError`，证明旧 parser 把普通文本接纳为空结果。最小格式门实现后，聚焦 GREEN `1 passed in 0.03s`，解析器套件 `6 passed in 0.03s`，完整后端 `28 passed in 0.45s`；`git diff --check` 退出 0。未使用默认 Python 3.13。
+- **实现与提交：** `f485f8c` (`feat(api): reject invalid diff format`) 将已存在的 `DiffNormalizationError` 与 `PublicErrorCode.INVALID_DIFF_FORMAT` 复用于 parser，并以单一 `_GIT_DIFF_HEADER.fullmatch()` 同时控制格式识别和文件段解析；已完成的 modification/rename/delete/binary/hunk 行为未改变。
+- **两阶段审查：** fresh spec reviewer 批准精确错误码、范围和既有合法路径保留；fresh quality reviewer 批准正则控制点、状态行为、错误合同、测试与最小范围。两轮均无 Critical、Important 或 Minor。
+- **人工干预与教训：** subagent 环境仍无法使用项目要求的 Python 3.12，故只由控制器在所有者上下文产生真实 RED/GREEN 证据，且没有退回默认解释器。格式验证应在预期结构的最早边界失败，并复用已经定义的公开错误词汇，而不是创建重复异常或延后到 HTTP 层。
