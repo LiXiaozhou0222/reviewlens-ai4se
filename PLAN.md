@@ -195,6 +195,8 @@ flowchart LR
 **Branch/worktree：** `codex/general-rules` / `../reviewlens-general-rules`
 **Depends on：** M02、M03
 
+**真实里程碑收尾：** T04.1–T04.7 完成后，M04 全分支复核先发现 GEN-001/GEN-002/GEN-004 的动态值与无目标文本误报边界；第一轮修复提交 `fe32601` 后的 scoped 复审又发现剩余三项保守匹配缺口。经用户要求完成 M04 后，第二轮仅以 `f6f1cab` 修复 whole-value `$NAME`、无目标 SQL 注释和任意位置的动态 HTTP host；fresh final scoped quality re-review 已于 2026-08-10 批准，无 Critical/Important。最终代码验证必须使用 Python 3.12；本轮最终全量后端结果为 `69 passed`。
+
 | Task | 文件与最小目标 | RED / 预期 | GREEN / 预期 |
 | --- | --- | --- | --- |
 | T04.1 | `rules/catalog.py`、`tests/rules/test_general_rules.py`：只定义不可配置的 `RULESET_VERSION=1.0.0` 与 GEN-001…005 元数据。<br>**真实完成提交：** `bc1c055` (`feat(api): add fixed general rule catalog`) 与 `79f9bc5` (`test(api): verify fixed ruleset ignores environment`)；2026-08-10 经规约符合性复审和代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/rules/test_general_rules.py::test_ruleset_catalog_is_fixed -q`；`ModuleNotFoundError: No module named 'app.rules'`。补充环境不可配置测试以受控临时 mutation 得到 `99.99.99 != 1.0.0`。 | 固定目录聚焦：`1 passed`；补充覆盖与相关套件：`2 passed`；完整后端：`34 passed`。 |

@@ -435,3 +435,11 @@
 - **真实回归验证：** fresh subagent 只增加删除、hunk context 和文件头三类 synthetic Diff 测试，分别含虚构 API_KEY、rm-rf、TODO、HTTP 文本。因生产规则已正确实现，控制器临时让 GEN-001 读取删除 hunk 行；Python 3.12 目标测试真实失败并产生 Finding，随后立即还原 added-lines-only 循环。
 - **最终证据与审查：** 范围套件 `3 passed in 0.19s`、规则套件 `28 passed in 0.24s`、完整后端 `60 passed in 0.53s`。`079d018` 仅含测试文件；fresh spec 和 quality reviewer 均 APPROVED，无可操作问题。
 - **教训：** “只新增行”必须在每条通用规则的共同边界被集成测试覆盖，不能仅依赖每个规则独立实现的相同循环模式。
+
+## 2026-08-10 23:56:04 +08:00 — 阶段：M04 最终全分支复核、两轮修订与收尾
+
+- **Task / skill / context：** T04.1–T04.7 的任务级 RED→GREEN→REFACTOR 与双阶段审查完成后，控制器依 `superpowers:requesting-code-review` 对 M04 分支进行全分支复核；收到意见时依 `superpowers:receiving-code-review` 逐项核对 `SPEC.md` 的高置信、保守规则边界。用户明确要求“把 M04 跑完今天收工”，因此在第一轮 scoped 复审仍发现三项重要误报边界后，授权同一 M04 范围内第二轮最小修订；未开始 M05。
+- **第一轮问题与证据：** 全分支复核发现：GEN-001 将 whole-value `$DB_PASSWORD` 当作硬编码凭据、GEN-002 将 `DROP TABLE;`/`TRUNCATE DATABASE # note` 之类无目标文本当作操作、GEN-004 将 `http://${HOST}` 当作硬编码地址。fresh subagent 先只写回归测试；控制器显式用 Python 3.12 运行规则测试得到 4 个预期失败。最小修订 `fe32601` 后，规则聚焦 `29 passed`、规则套件 `32 passed`、完整后端 `64 passed`；未使用 Python 3.13。
+- **第二轮问题与真实 TDD：** 第一轮 scoped quality re-review 进一步发现：SQL 注释形态 `DROP TABLE -- note` 与 `TRUNCATE DATABASE /* note */` 仍可误报，部分动态 host `api.${DOMAIN}`/`service-{{HOST}}` 未排除，且“任意含 `$identifier`”的排除会漏掉真实字面量 `rl_fake_p@ss$word123`。fresh subagent 先仅增加 3 组回归测试；控制器 Python 3.12 RED 得到 5 个预期失败。最小修订 `f6f1cab` 仅更新 `rules/general.py` 与对应测试：仅 whole-value `$NAME` 可免报、SQL 必须有保守可识别的目标、完整 host 有模板标记即免报。
+- **最终验证与审查：** 控制器在 `apps/api` 使用 `py -3.12 -m pytest` 依次得到 `34 passed`（通用规则）、`37 passed`（规则目录）和 `69 passed`（完整后端）；`git diff --check` 无空白错误。fresh final scoped quality re-review 独立检查 `fe32601..f6f1cab` 后为 **APPROVED**，无 Critical 或 Important；其未编辑文件、未运行测试。所有测试 fixture 使用虚构值，未访问网络、未使用真实 OpenAI、未产生外部发布动作。
+- **提交、范围与教训：** `fe32601` (`fix(api): reject dynamic rule inputs`) 与 `f6f1cab` (`fix(api): refine conservative rule matching`) 为真实代码/测试提交；本条日志和 PLAN 回填另行提交。文本安全规则必须同时证明“动态值不报”和“字面量中恰好含相似字符仍报告”，并对 SQL 目标及 URL host 的完整语义做保守判断；全分支复核捕捉到的跨任务边界问题需要关闭后才能把里程碑交给下游。
