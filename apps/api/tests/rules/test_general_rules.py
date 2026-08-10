@@ -232,3 +232,30 @@ def test_gen_002_ignores_plain_quoted_prose_literal() -> None:
     )
 
     assert scan_gen_002(parsed_diff) == ()
+
+
+@pytest.mark.parametrize(
+    "destructive_text",
+    [
+        "rm -rf; echo ok",
+        "mkfs # explanation",
+    ],
+)
+def test_gen_002_ignores_missing_or_delimited_command_target(
+    destructive_text: str,
+) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/scripts/cleanup.sh b/scripts/cleanup.sh",
+                "index 1234567..89abcde 100644",
+                "--- a/scripts/cleanup.sh",
+                "+++ b/scripts/cleanup.sh",
+                "@@ -1 +1,2 @@",
+                " keep_fixture=true",
+                f"+{destructive_text}",
+            ]
+        )
+    )
+
+    assert scan_gen_002(parsed_diff) == ()

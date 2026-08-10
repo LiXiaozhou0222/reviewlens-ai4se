@@ -13,9 +13,9 @@ _CREDENTIAL_LITERAL = re.compile(
 _DESTRUCTIVE_OPERATION = re.compile(
     r"""(?ix)
     ^\s*(?:
-        rm\s+-(?:rf|fr)\s+\S+
+        rm\s+-(?:rf|fr)\s+[^\s;#|&-]\S*
         |(?:drop|truncate)\s+(?:table|database)\b
-        |mkfs(?:\.[a-z0-9_-]+)?\s+\S+
+        |mkfs(?:\.[a-z0-9_-]+)?\s+[^\s;#|&-]\S*
     )
     """
 )
