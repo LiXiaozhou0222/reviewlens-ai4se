@@ -336,3 +336,11 @@
 - **Task / subagent**：fresh implementation subagent 创建 `parser.py` 与 `test_parser.py`；初始提交 `cc3055f` (`feat(api): map unified diff added lines`) 仅处理普通合法单文件 unified diff，基于 hunk `+new_start` 将新增行锚定到目标文件新行号。真实 RED 为缺少 `app.diff_parser.parser`，实现后控制器 Python 3.12 验证聚焦 `1 passed in 0.02s`、parser `1 passed in 0.02s`、全套 `23 passed in 0.51s`。
 - **质量审查与 fix round 1**：规约审查批准；质量审查发现 Important：hunk 内物理 `+++ ...` 新增行会被误判目标文件头，另发现完整 additions 断言不足与 fixture 前导反斜杠。先补回归测试，控制器真实 RED 显示第二条 `AddedLine('++ plus_prefixed = True', 12)` 缺失。原 implementation subagent 仅修复 parser/test：仅在 hunk 外识别 `+++ b/`，并在 `diff --git` 重置 hunk；清理 fixture 且断言完整 additions。提交 `325bafc` (`fix(api): preserve plus-prefixed diff additions`) 后，回归 `1 passed in 0.02s`、parser `1 passed in 0.02s`、全套 `23 passed in 0.42s`。
 - **复审与教训**：fresh scoped quality re-review 批准，确认 P1/P2/P3 都被解决且无新问题。教训：Diff 的控制前缀与用户新增代码文本可重叠，parser 必须用状态上下文而非仅前缀判断，测试必须包含该类边界内容。
+
+## 2026-08-10 13:35:31 +08:00 — 阶段：T03.5 完成 / Diff 变更元数据与双阶段审查
+
+- **Task / skill / context：** 在 `codex/diff-parser` 隔离 worktree，fresh implementation subagent 按 `superpowers:subagent-driven-development` 与 `test-driven-development` 执行 T03.5；任务只允许扩展普通 Git unified diff 的重命名、删除、二进制和文件头元数据，不进入 T03.6 格式拒绝、规则扫描或路由。
+- **真实 RED → GREEN → REFACTOR：** subagent 先只增加 4 个合成 Diff 测试。控制器在所有者上下文显式运行 `py -3.12 -m pytest tests/diff_parser/test_parser.py -q`，得到 `1 passed, 4 failed in 0.16s`：重命名/删除/binary 尚无 `ParsedFile`，修改文件缺少 `change_type`。最小实现后，同一命令得到 `5 passed in 0.03s`；完整后端 `py -3.12 -m pytest -q` 得到 `27 passed in 0.50s`，`git diff --check` 退出 0。未使用 Python 3.13。
+- **实现与提交：** `bd8421c` (`feat(api): parse diff change metadata`) 增加冻结 `ParsedFile.change_type` / `old_path`，在 `diff --git` 边界完成并重置文件状态；识别 `rename from/to`、`+++ /dev/null` 和 `Binary files ... differ`。hunk 外 `+++ b/path` 保持文件元数据，hunk 内 `+++ content` 仍是新增代码行。
+- **两阶段审查：** fresh spec reviewer 基于任务简报、实现报告和提交差异包给出 APPROVED；随后 fresh quality reviewer 独立检查状态泄漏、边界、可读性、测试与范围，同样 APPROVED。两轮均无 Critical、Important 或 Minor。
+- **人工干预与教训：** 普通 subagent 身份仍不能直接发现所有者安装的 Python 3.12，因此测试证据由控制器在明确的 `py -3.12` 所有者上下文产生；实现智能体没有以 3.13 替代。解析器控制元数据与以 `+` 开头的真实内容会重叠，必须以 hunk 状态区分，且每次增加 metadata 路径都需覆盖文件最终收集与状态重置。
