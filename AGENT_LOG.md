@@ -366,3 +366,10 @@
 - **真实 TDD 证据：** 先加入指定合成测试，控制器显式运行 Python 3.12 得到预期 RED：`ImportError: cannot import name 'HunkLine'`。最小实现后聚焦 GREEN 为 `1 passed in 0.03s`，解析器套件为 `7 passed in 0.03s`，完整后端为 `29 passed in 0.49s`，`git diff --check` 退出 0；没有使用 Python 3.13。
 - **实现与审查：** `434d826` (`feat(api): preserve parsed diff hunks`) 增加冻结 `HunkLine` / `ParsedHunk`、旧新行坐标、hunk 顺序和文件级 added/deleted 统计，同时保留既有新增行视图。fresh spec reviewer 与 fresh quality reviewer 均 APPROVED，无 Critical、Important 或 Minor；未进入 T03.8 生命周期/binary 或 T03.9 LF 处理。
 - **教训：** 解析新增行本身不足以支撑上下文规则和规模规则；解析中间模型必须保留可审计的 hunk 语境和删除行坐标，同时让删除内容不进入新增行扫描视图。
+
+## 2026-08-10 15:10:00 +08:00 — 阶段：T03.8 完成 / 生命周期与 binary 分离
+
+- **Task / context：** fresh subagent 按用户批准的 T03.8 仅将文件生命周期与二进制能力标记拆分。首次两个实现 subagent 长时间未产生文件或状态，被中止；检查确认工作树未受影响，第三个 fresh subagent 只写 RED 测试后正常继续。
+- **真实 TDD 与调试：** Python 3.12 RED 得到 `assert 'binary' == 'added'`，证明旧实现以 binary 覆盖新增状态。最小实现后的聚焦测试通过；完整回归发现旧 binary fixture 仍断言过时的 `change_type == 'binary'`。按 `systematic-debugging` 核对代码、错误和近期变更后，确认根因为 T03.8 已明确替换该语义，遂由原 subagent 仅更新测试断言为 `modified` + `is_binary=True`。复验：聚焦 `1 passed`、解析器 `8 passed`、后端 `30 passed`，均显式 `py -3.12`。
+- **提交与审查：** `63f7296` (`feat(api): separate file lifecycle and binary state`)；fresh spec 与 quality review 均 APPROVED，无 Critical、Important 或 Minor。生命周期限定为 added/modified/deleted/renamed，`is_binary` 独立且每个 diff 文件段重置；未进入 T03.9。
+- **教训：** 当计划有意替换公开中间模型语义时，已有测试本身可能成为唯一回归失败点；先用错误输出、实现合同和差异确认根因，再做最小断言迁移，不能把旧断言当作生产代码缺陷。
