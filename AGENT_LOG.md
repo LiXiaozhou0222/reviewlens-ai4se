@@ -359,3 +359,10 @@
 - **复核结果：** reviewer 发现 Critical：现有 `ParsedDiff` 未保留 hunk、context/deleted 行、增删统计，无法支撑 GEN-005 与 JS 上下文规则；Critical：新建文件未被识别，`binary` 与生命周期状态混合；Important：`str.splitlines()` 会把 U+2028、form feed 等非 LF 字符错误视为 Diff 行边界。控制器核对确认这些并非新增功能请求，而是已确认 SPEC 的 `hunk`、文件状态、增删统计和仅 CRLF/CR→LF 规范化合同在原 T03.1–T03.6 中漏拆。
 - **用户确认与计划修订：** 用户在本轮明确回复“同意补充”。因此 PLAN 从 107 个正式任务如实增至 110 个，并增加 T03.7（hunk/旧新行号/统计）、T03.8（新增生命周期与独立 binary 标记）和 T03.9（严格 LF 行边界）。该修订未改变 `SPEC.md`，未创建或修改业务代码、测试、Docker、CI 或外部资产。
 - **偏离与教训：** 之前的 task-level review 均忠实核对了各自过窄的 task brief，却不足以证明整个 M03 共享接口合同；此后每个主要模块完成后必须在集成前进行跨任务全分支复核。新增三项仍需各自由 fresh implementation subagent 执行 TDD、双阶段评审和真实提交，当前不将它们计为完成。
+
+## 2026-08-10 14:40:00 +08:00 — 阶段：T03.7 完成 / hunk、行来源与文件统计
+
+- **Task / skill / context：** 用户授权补项后，fresh implementation subagent 按 `subagent-driven-development` / `test-driven-development` 在 `codex/diff-parser` 实施 T03.7；范围仅是 hunk 结构、context/added/deleted 行来源与逐文件增删计数。
+- **真实 TDD 证据：** 先加入指定合成测试，控制器显式运行 Python 3.12 得到预期 RED：`ImportError: cannot import name 'HunkLine'`。最小实现后聚焦 GREEN 为 `1 passed in 0.03s`，解析器套件为 `7 passed in 0.03s`，完整后端为 `29 passed in 0.49s`，`git diff --check` 退出 0；没有使用 Python 3.13。
+- **实现与审查：** `434d826` (`feat(api): preserve parsed diff hunks`) 增加冻结 `HunkLine` / `ParsedHunk`、旧新行坐标、hunk 顺序和文件级 added/deleted 统计，同时保留既有新增行视图。fresh spec reviewer 与 fresh quality reviewer 均 APPROVED，无 Critical、Important 或 Minor；未进入 T03.8 生命周期/binary 或 T03.9 LF 处理。
+- **教训：** 解析新增行本身不足以支撑上下文规则和规模规则；解析中间模型必须保留可审计的 hunk 语境和删除行坐标，同时让删除内容不进入新增行扫描视图。
