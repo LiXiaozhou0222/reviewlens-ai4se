@@ -330,3 +330,9 @@
 - **Task / subagent**：fresh implementation subagent 在 `normalizer.py` 中将 500 KB 固定为 `MAX_DIFF_BYTES=512_000`（500×1024），将行数固定为 `MAX_DIFF_LINES=5_000`，扩展 `NormalizedDiff` 为原始字节数与规范化逻辑行数。提交 `4808448` (`feat(api): enforce diff input limits`)；未实现解析、路由、持久化或截断。
 - **真实 TDD 与验证**：先新增超 5,000 行、超 512,000 字节、两个精确边界和计数测试；所有者 Python 3.12 的 RED 因缺少 `MAX_DIFF_LINES` 产生预期 `AttributeError`。最小实现后独立验证聚焦 `1 passed in 0.03s`、normalizer `9 passed in 0.03s`、全套后端 `22 passed in 0.53s`。超过字节上限在解码前以 `INPUT_TOO_LARGE` 拒绝；规范化后的 `splitlines()` 超过行数以 `LINE_LIMIT_EXCEEDED` 拒绝；两者均无静默截断。
 - **两阶段审查**：fresh spec reviewer 批准，确认常量、顺序、边界和错误码；fresh quality reviewer 批准，确认逻辑行计数、测试、可读性和最小范围。均无 Critical、Important 或 Minor。
+
+## 2026-08-10 11:20:00 +08:00 — 阶段：T03.4 完成 / 新文件行号映射与修复复审
+
+- **Task / subagent**：fresh implementation subagent 创建 `parser.py` 与 `test_parser.py`；初始提交 `cc3055f` (`feat(api): map unified diff added lines`) 仅处理普通合法单文件 unified diff，基于 hunk `+new_start` 将新增行锚定到目标文件新行号。真实 RED 为缺少 `app.diff_parser.parser`，实现后控制器 Python 3.12 验证聚焦 `1 passed in 0.02s`、parser `1 passed in 0.02s`、全套 `23 passed in 0.51s`。
+- **质量审查与 fix round 1**：规约审查批准；质量审查发现 Important：hunk 内物理 `+++ ...` 新增行会被误判目标文件头，另发现完整 additions 断言不足与 fixture 前导反斜杠。先补回归测试，控制器真实 RED 显示第二条 `AddedLine('++ plus_prefixed = True', 12)` 缺失。原 implementation subagent 仅修复 parser/test：仅在 hunk 外识别 `+++ b/`，并在 `diff --git` 重置 hunk；清理 fixture 且断言完整 additions。提交 `325bafc` (`fix(api): preserve plus-prefixed diff additions`) 后，回归 `1 passed in 0.02s`、parser `1 passed in 0.02s`、全套 `23 passed in 0.42s`。
+- **复审与教训**：fresh scoped quality re-review 批准，确认 P1/P2/P3 都被解决且无新问题。教训：Diff 的控制前缀与用户新增代码文本可重叠，parser 必须用状态上下文而非仅前缀判断，测试必须包含该类边界内容。
