@@ -423,3 +423,9 @@
 - **真实 TDD：** fresh subagent 先添加公网 HTTP、参数化 loopback、HTTPS 与 localhost 子域测试；控制器 Python 3.12 RED 为缺少 `scan_gen_004`。最小实现后聚焦 `5 passed in 0.25s`、规则套件 `24 passed in 0.24s`、完整后端 `56 passed in 0.62s`。
 - **范围与审查：** `12cf519` 仅扫描非二进制新增行的 literal `http://`，精确豁免 localhost（大小写无关）、127.0.0.1 与 IPv6 loopback，且不访问网络。fresh spec 与 quality review 均 APPROVED，无 Critical、Important 或 Minor。
 - **教训：** 地址安全边界必须是精确主机比较而非前缀比较；`localhost.example` 与 `127.0.0.10` 不能因相似字符串被静默豁免。
+
+## 2026-08-10 22:45:00 +08:00 — 阶段：T04.6 完成 / GEN-005 文件级规模
+
+- **真实 TDD：** fresh subagent 只写使用冻结 `ParsedDiff`/`ParsedFile` 统计的 500、499 和 binary-500 测试；控制器 Python 3.12 RED 为缺少 `app.rules.engine`。最小实现后聚焦 `1 passed in 0.21s`、规则套件 `25 passed in 0.24s`、完整后端 `57 passed in 0.62s`。
+- **范围与审查：** `039f421` 只增加 `scan_gen_005`，按 `added_line_count + deleted_line_count >= 500` 生成每文件一个 GEN-005，二进制跳过，`new_line=None` 且 excerpt 为空；fresh spec 和 quality review 均 APPROVED，无可操作问题。
+- **教训：** 规模提示是完整变更元数据例外，必须明确作为 file-level Finding，不得为了 UI 便利捏造代码行号或复制任何 Diff 片段。
