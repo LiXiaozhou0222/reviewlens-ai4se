@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 import re
 
+from app.diff_parser.normalizer import DiffNormalizationError
+from app.models.errors import PublicErrorCode
+
 
 @dataclass(frozen=True)
 class AddedLine:
@@ -22,9 +25,13 @@ class ParsedDiff:
 
 
 _HUNK_HEADER = re.compile(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
+_GIT_DIFF_HEADER = re.compile(r"diff --git a/\S+ b/\S+$")
 
 
 def parse_unified_diff(text: str) -> ParsedDiff:
+    if not any(_GIT_DIFF_HEADER.fullmatch(line) for line in text.splitlines()):
+        raise DiffNormalizationError(PublicErrorCode.INVALID_DIFF_FORMAT)
+
     files: list[ParsedFile] = []
     new_path: str | None = None
     old_path: str | None = None
@@ -44,7 +51,7 @@ def parse_unified_diff(text: str) -> ParsedDiff:
             )
 
     for line in text.splitlines():
-        if line.startswith("diff --git "):
+        if _GIT_DIFF_HEADER.fullmatch(line):
             finish_file()
             paths = line.split()
             old_path = paths[2].removeprefix("a/")

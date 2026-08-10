@@ -1,4 +1,15 @@
+import pytest
+
+from app.diff_parser.normalizer import DiffNormalizationError
 from app.diff_parser.parser import AddedLine, parse_unified_diff
+from app.models.errors import PublicErrorCode
+
+
+def test_rejects_invalid_unified_diff() -> None:
+    with pytest.raises(DiffNormalizationError) as error:
+        parse_unified_diff("This is plain UTF-8 text, not a Git unified diff.")
+
+    assert error.value.code is PublicErrorCode.INVALID_DIFF_FORMAT
 
 
 def test_maps_added_line_to_new_file_line_number() -> None:
