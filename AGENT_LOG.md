@@ -318,3 +318,9 @@
 - **Task / subagent**：在已迁移的可写 `codex/diff-parser` worktree，fresh implementation subagent 只创建 `apps/api/app/diff_parser/normalizer.py` 与 `apps/api/tests/diff_parser/test_normalizer.py`。提交 `b86e296` (`feat(api): validate diff input encoding`) 定义 `DiffNormalizationError.code` 与 `decode_utf8_diff(raw)`；空字节映射 `INPUT_EMPTY`，严格 UTF-8 解码失败映射 `INVALID_UTF8`，不替代编码、不记录原始输入。
 - **真实 TDD 与验证**：先仅写两条合成输入测试，所有者 Python 3.12 的 RED 为 `ModuleNotFoundError: No module named 'app.diff_parser'`。最小实现后，控制器独立验证聚焦测试 `1 passed in 0.03s`、normalizer 测试 `2 passed in 0.03s`、全套后端测试 `15 passed in 0.60s`；未使用 Python 3.13。
 - **两阶段审查**：fresh spec reviewer 批准，确认代码/错误码/严格解码/无 raw 输入泄露与范围完全符合；fresh quality reviewer 批准，确认异常链、类型、测试和最小范围合格。两轮均无 Critical、Important 或 Minor。
+
+## 2026-08-10 10:00:00 +08:00 — 阶段：T03.2 完成 / Diff 规范化与摘要合同
+
+- **Task / subagent**：在 `codex/diff-parser` worktree，fresh implementation subagent 完成 `apps/api/app/diff_parser/normalizer.py` 与既有 normalizer 测试的最小扩展；提交 `fdaa593` (`feat(api): normalize diff content and digest`)。新增冻结 `NormalizedDiff(text, sha256)` 与 `normalize_diff(raw)`，复用 T03.1 的严格 UTF-8 校验，移除恰好一个首位 BOM，将 CRLF 和剩余 CR 统一为 LF，并对规范化 UTF-8 字节计算小写 SHA-256。
+- **真实 TDD 与验证**：此前只保留 T03.2 RED 测试；所有者 Python 3.12 真实运行 `test_crlf_and_lf_have_the_same_digest`，因 `normalize_diff` 不存在产生预期 `AttributeError`。最小实现后，控制器独立验证聚焦 GREEN `1 passed in 0.13s`、normalizer 套件 `5 passed in 0.04s`、全套后端 `18 passed in 0.89s`；全程未使用 Python 3.13。
+- **两阶段审查**：fresh spec reviewer 批准，确认错误码保持、单个 BOM、CRLF/CR 规范化、摘要范围与无越界；fresh quality reviewer 批准，确认冻结模型、异常复用、测试覆盖与无额外依赖。两轮无 Critical、Important 或 Minor。
