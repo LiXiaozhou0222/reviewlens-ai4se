@@ -10,22 +10,27 @@ _GEN_002 = next(rule for rule in GENERAL_RULES if rule.rule_id == "GEN-002")
 _GEN_003 = next(rule for rule in GENERAL_RULES if rule.rule_id == "GEN-003")
 _GEN_004 = next(rule for rule in GENERAL_RULES if rule.rule_id == "GEN-004")
 _CREDENTIAL_LITERAL = re.compile(
-    r"""(?i)(?<![A-Za-z0-9_])(?:["'])?(?:api_key|apikey|token|access_token|auth_token|password|passwd|secret)(?:["'])?(?![A-Za-z0-9_])\s*[:=]\s*(?P<quote>["'])(?P<value>(?![^"']*(?:\$\{|\$[A-Za-z_][A-Za-z0-9_]*|\{\{))[^"']+)(?P=quote)"""
+    r"""(?i)(?<![A-Za-z0-9_])(?:["'])?(?:api_key|apikey|token|access_token|auth_token|password|passwd|secret)(?:["'])?(?![A-Za-z0-9_])\s*[:=]\s*(?P<quote>["'])(?P<value>(?![^"']*(?:\$\{|\{\{))[^"']+)(?P=quote)"""
 )
+_DYNAMIC_CREDENTIAL_REFERENCE = re.compile(r"\$[A-Za-z_][A-Za-z0-9_]*")
 _DESTRUCTIVE_OPERATION = re.compile(
     r"""(?ix)
     ^\s*(?:
         rm\s+-(?:rf|fr)\s+[^\s;#|&-]\S*
-        |(?:drop|truncate)\s+(?:table|database)\s+[^\s;#|&]\S*
+        |(?:drop|truncate)\s+(?:table|database)\s+
+            (?:[a-z_][a-z0-9_]*|"(?:[^"]|"")+")
+            (?:\.(?:[a-z_][a-z0-9_]*|"(?:[^"]|"")+"))*
+            (?=\s*(?:;|$|--|/\*))
         |mkfs(?:\.[a-z0-9_-]+)?\s+[^\s;#|&-]\S*
     )
     """
 )
 _MAINTENANCE_MARKER = re.compile(r"(?i)(?<!\w)(?:todo|fixme|hack)(?!\w)")
 _HTTP_URL = re.compile(
-    r'''http://(?!\$\{|\$[A-Za-z_]|\{\{)(?P<host>\[[^\]\s]+\]|[^/\s"'<>?#]+)''',
+    r'''http://(?P<host>\[[^\]\s]+\]|[^/\s"'<>?#]+)''',
     re.IGNORECASE,
 )
+_DYNAMIC_HTTP_HOST = re.compile(r"\$\{|\{\{|\$[A-Za-z_][A-Za-z0-9_]*")
 
 
 def scan_gen_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
@@ -36,7 +41,10 @@ def scan_gen_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
             continue
 
         for added_line in parsed_file.added_lines:
-            if _CREDENTIAL_LITERAL.search(added_line.content) is None:
+            match = _CREDENTIAL_LITERAL.search(added_line.content)
+            if match is None or _DYNAMIC_CREDENTIAL_REFERENCE.fullmatch(
+                match.group("value")
+            ):
                 continue
 
             findings.append(
@@ -121,7 +129,8 @@ def scan_gen_004(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
 
         for added_line in parsed_file.added_lines:
             for match in _HTTP_URL.finditer(added_line.content):
-                if _is_loopback_http_host(match.group("host")):
+                host = match.group("host")
+                if _DYNAMIC_HTTP_HOST.search(host) or _is_loopback_http_host(host):
                     continue
 
                 findings.append(

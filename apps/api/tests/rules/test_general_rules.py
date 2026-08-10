@@ -160,6 +160,28 @@ def test_gen_001_ignores_quoted_environment_variable_reference() -> None:
     assert scan_gen_001(parsed_diff) == ()
 
 
+def test_gen_001_finds_literal_credential_containing_dollar_identifier() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/config/settings.py b/config/settings.py",
+                "index 1234567..89abcde 100644",
+                "--- a/config/settings.py",
+                "+++ b/config/settings.py",
+                "@@ -1 +1,2 @@",
+                " SETTINGS = {}",
+                '+PASSWORD = "rl_fake_p@ss$word123"',
+            ]
+        )
+    )
+
+    findings = scan_gen_001(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "GEN-001"
+    assert findings[0].raw_excerpt == 'PASSWORD = "rl_fake_p@ss$word123"'
+
+
 def test_gen_002_finds_added_destructive_command() -> None:
     parsed_diff = parse_unified_diff(
         "\n".join(
@@ -288,6 +310,33 @@ def test_gen_002_ignores_missing_or_delimited_command_target(
     ],
 )
 def test_gen_002_ignores_targetless_sql_operation(destructive_text: str) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/db/migration.sql b/db/migration.sql",
+                "index 1234567..89abcde 100644",
+                "--- a/db/migration.sql",
+                "+++ b/db/migration.sql",
+                "@@ -1 +1,2 @@",
+                " BEGIN;",
+                f"+{destructive_text}",
+            ]
+        )
+    )
+
+    assert scan_gen_002(parsed_diff) == ()
+
+
+@pytest.mark.parametrize(
+    "destructive_text",
+    [
+        "DROP TABLE -- note",
+        "TRUNCATE DATABASE /* note */",
+    ],
+)
+def test_gen_002_ignores_sql_operation_when_comment_follows_without_object(
+    destructive_text: str,
+) -> None:
     parsed_diff = parse_unified_diff(
         "\n".join(
             [
@@ -467,6 +516,33 @@ def test_gen_004_ignores_template_environment_host() -> None:
                 "@@ -1 +1,2 @@",
                 " timeout = 5",
                 '+API_URL = "http://${HOST}/api"',
+            ]
+        )
+    )
+
+    assert scan_gen_004(parsed_diff) == ()
+
+
+@pytest.mark.parametrize(
+    "address",
+    [
+        "http://api.${DOMAIN}/",
+        "http://service-{{HOST}}/",
+    ],
+)
+def test_gen_004_ignores_http_host_containing_dynamic_expression(
+    address: str,
+) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/client.py b/src/client.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/client.py",
+                "+++ b/src/client.py",
+                "@@ -1 +1,2 @@",
+                " timeout = 5",
+                f'+API_URL = "{address}"',
             ]
         )
     )
