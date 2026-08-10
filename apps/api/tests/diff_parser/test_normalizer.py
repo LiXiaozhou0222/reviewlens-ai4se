@@ -39,3 +39,39 @@ def test_digest_is_a_64_character_lowercase_sha256_hex_string() -> None:
     result = normalizer.normalize_diff(b"+synthetic\n")
 
     assert result.sha256 == "bc953cb91a1b2e423b008cda1d44de01df14a97eb4cee10df258a93dcdebf536"
+
+
+def test_rejects_over_line_limit() -> None:
+    raw = (b"+synthetic\n" * normalizer.MAX_DIFF_LINES) + b"+synthetic"
+
+    with pytest.raises(DiffNormalizationError) as exc_info:
+        normalizer.normalize_diff(raw)
+
+    assert exc_info.value.code is PublicErrorCode.LINE_LIMIT_EXCEEDED
+
+
+def test_rejects_over_byte_limit_before_decoding() -> None:
+    raw = b"a" * (normalizer.MAX_DIFF_BYTES + 1)
+
+    with pytest.raises(DiffNormalizationError) as exc_info:
+        normalizer.normalize_diff(raw)
+
+    assert exc_info.value.code is PublicErrorCode.INPUT_TOO_LARGE
+
+
+def test_accepts_exact_byte_limit_and_reports_counts() -> None:
+    raw = b"a" * normalizer.MAX_DIFF_BYTES
+
+    result = normalizer.normalize_diff(raw)
+
+    assert result.byte_count == normalizer.MAX_DIFF_BYTES
+    assert result.line_count == 1
+
+
+def test_accepts_exact_line_limit_and_reports_counts() -> None:
+    raw = (b"+synthetic\n" * (normalizer.MAX_DIFF_LINES - 1)) + b"+synthetic"
+
+    result = normalizer.normalize_diff(raw)
+
+    assert result.byte_count == len(raw)
+    assert result.line_count == normalizer.MAX_DIFF_LINES
