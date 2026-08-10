@@ -373,3 +373,11 @@
 - **真实 TDD 与调试：** Python 3.12 RED 得到 `assert 'binary' == 'added'`，证明旧实现以 binary 覆盖新增状态。最小实现后的聚焦测试通过；完整回归发现旧 binary fixture 仍断言过时的 `change_type == 'binary'`。按 `systematic-debugging` 核对代码、错误和近期变更后，确认根因为 T03.8 已明确替换该语义，遂由原 subagent 仅更新测试断言为 `modified` + `is_binary=True`。复验：聚焦 `1 passed`、解析器 `8 passed`、后端 `30 passed`，均显式 `py -3.12`。
 - **提交与审查：** `63f7296` (`feat(api): separate file lifecycle and binary state`)；fresh spec 与 quality review 均 APPROVED，无 Critical、Important 或 Minor。生命周期限定为 added/modified/deleted/renamed，`is_binary` 独立且每个 diff 文件段重置；未进入 T03.9。
 - **教训：** 当计划有意替换公开中间模型语义时，已有测试本身可能成为唯一回归失败点；先用错误输出、实现合同和差异确认根因，再做最小断言迁移，不能把旧断言当作生产代码缺陷。
+
+## 2026-08-10 15:35:00 +08:00 — 阶段：T03.9 完成 / 严格 LF Diff 行边界
+
+- **Task / skill / context：** fresh implementation subagent 按 `superpowers:subagent-driven-development` 与 `test-driven-development` 在 `codex/diff-parser` 完成 T03.9；只修复已确认的 Diff 合同：规范化后仅 LF 是行边界，U+2028 和 form feed 是合法行内内容。未扩大到规则、路由、持久化或依赖。
+- **真实 TDD 与人工干预：** 初始测试草案把 U+2028 错写为字节文本并产生 `SyntaxWarning`；控制器未将其作为 RED 证据，要求 fresh test-only 修订为真实 UTF-8 字符。随后所有者上下文显式运行 `py -3.12 -m pytest` 的两个聚焦测试，得到预期 RED（normalizer 将一行误计为三行，parser 截断新增内容）。最小实现后得到聚焦 GREEN `2 passed in 0.10s`、相关套件 `19 passed in 0.07s`、完整后端 `32 passed in 0.55s`；没有使用 Python 3.13。
+- **实现与提交：** `0428aea` (`fix(api): preserve non-lf diff content`) 令 normalizer 仅按 LF 和未终止末行计数，parser 仅以 `\n` 迭代和验证 Diff 行；U+2028/form feed 仍保留在新增行内容中。
+- **两阶段审查：** fresh spec reviewer APPROVED，确认 LF-only、末行和范围合同；首次 quality reviewer 被系统中断且未产生结论，因此重新派发 fresh quality re-review。该复审检查 `000110b..0428aea`、当前四个相关文件及 `git diff --check` 后 APPROVED，无 Critical、Important 或 Minor。
+- **教训：** 文本 API 的默认“逻辑行”定义未必等同于 unified Diff 的 LF 物理行定义。对于安全扫描的输入边界，测试 fixture 必须包含真实 Unicode 字符，不能用外观相似的转义字节代替。
