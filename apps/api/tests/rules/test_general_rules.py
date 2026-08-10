@@ -1,8 +1,10 @@
+import importlib
 from dataclasses import FrozenInstanceError
 
 import pytest
 
 from app.models.domain import FindingSource, Severity
+from app.rules import catalog
 from app.rules.catalog import GENERAL_RULES, RULESET_VERSION
 
 
@@ -33,3 +35,19 @@ def test_ruleset_catalog_is_fixed() -> None:
 
     with pytest.raises(FrozenInstanceError):
         GENERAL_RULES[0].severity = Severity.LOW
+
+
+def test_ruleset_catalog_ignores_environment_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("REVIEWLENS_RULESET_VERSION", "99.99.99")
+    monkeypatch.setenv("REVIEWLENS_RULE_CATALOG", "GEN-999")
+
+    reloaded_catalog = importlib.reload(catalog)
+
+    assert reloaded_catalog.RULESET_VERSION == "1.0.0"
+    assert [rule.rule_id for rule in reloaded_catalog.GENERAL_RULES] == [
+        "GEN-001",
+        "GEN-002",
+        "GEN-003",
+        "GEN-004",
+        "GEN-005",
+    ]
