@@ -4,9 +4,10 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from app.models.domain import FindingSource, Severity
-from app.diff_parser.parser import parse_unified_diff
+from app.diff_parser.parser import ParsedDiff, ParsedFile, parse_unified_diff
 from app.rules import catalog
 from app.rules.catalog import GENERAL_RULES, RULESET_VERSION
+from app.rules.engine import scan_gen_005
 from app.rules.general import scan_gen_001, scan_gen_002, scan_gen_003, scan_gen_004
 
 
@@ -432,3 +433,45 @@ def test_gen_004_finds_localhost_subdomain_http_address() -> None:
     assert len(findings) == 1
     assert findings[0].rule_id == "GEN-004"
     assert findings[0].raw_excerpt == 'API_URL = "http://localhost.example.test/api"'
+
+
+def test_gen_005_is_file_level() -> None:
+    parsed_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/large_change.py",
+                added_lines=(),
+                added_line_count=250,
+                deleted_line_count=250,
+            ),
+            ParsedFile(
+                new_path="src/small_change.py",
+                added_lines=(),
+                added_line_count=499,
+                deleted_line_count=0,
+            ),
+            ParsedFile(
+                new_path="assets/large_change.bin",
+                added_lines=(),
+                is_binary=True,
+                added_line_count=500,
+                deleted_line_count=0,
+            ),
+        )
+    )
+
+    findings = scan_gen_005(parsed_diff)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.rule_id == "GEN-005"
+    assert finding.rule_version == RULESET_VERSION
+    assert finding.source is FindingSource.GENERAL_RULE
+    assert finding.severity is Severity.MEDIUM
+    assert finding.path == "src/large_change.py"
+    assert finding.new_line is None
+    assert finding.raw_excerpt == ""
+    assert finding.message == "A single text file has a large change size."
+    assert finding.suggestion == (
+        "Consider splitting the change into smaller, reviewable pieces."
+    )
