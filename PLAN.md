@@ -197,7 +197,7 @@ flowchart LR
 
 | Task | 文件与最小目标 | RED / 预期 | GREEN / 预期 |
 | --- | --- | --- | --- |
-| T04.1 | `rules/catalog.py`、`tests/rules/test_general_rules.py`：只定义不可配置的 `RULESET_VERSION=1.0.0` 与 GEN-001…005 元数据。 | `cd apps/api; pytest tests/rules/test_general_rules.py::test_ruleset_catalog_is_fixed -q`；目录/版本不符。 | 同一命令；`1 passed`。 |
+| T04.1 | `rules/catalog.py`、`tests/rules/test_general_rules.py`：只定义不可配置的 `RULESET_VERSION=1.0.0` 与 GEN-001…005 元数据。<br>**真实完成提交：** `bc1c055` (`feat(api): add fixed general rule catalog`) 与 `79f9bc5` (`test(api): verify fixed ruleset ignores environment`)；2026-08-10 经规约符合性复审和代码质量审查批准。 | `cd apps/api; py -3.12 -m pytest tests/rules/test_general_rules.py::test_ruleset_catalog_is_fixed -q`；`ModuleNotFoundError: No module named 'app.rules'`。补充环境不可配置测试以受控临时 mutation 得到 `99.99.99 != 1.0.0`。 | 固定目录聚焦：`1 passed`；补充覆盖与相关套件：`2 passed`；完整后端：`34 passed`。 |
 | T04.2 | `rules/general.py`：仅 GEN-001 高置信凭据，且只扫描新增行。 | `cd apps/api; pytest tests/rules/test_general_rules.py::test_gen_001_finds_only_added_credential -q`；未命中或误扫上下文。 | 同一命令；`1 passed`。 |
 | T04.3 | 同上：仅 GEN-002 高置信危险 shell/数据库破坏操作。 | `cd apps/api; pytest tests/rules/test_general_rules.py::test_gen_002_finds_added_destructive_command -q`；未命中。 | 同一命令；`1 passed`。 |
 | T04.4 | 同上：仅 GEN-003 新增 TODO/FIXME/HACK。 | `cd apps/api; pytest tests/rules/test_general_rules.py::test_gen_003_finds_added_todo_marker -q`；未命中。 | 同一命令；`1 passed`。 |

@@ -388,3 +388,11 @@
 - **审查结论：** final reviewer 返回 **APPROVED**，无 Critical、Important 或 Minor。它确认 normalizer 的 UTF-8、单 BOM、LF、摘要、限额和末行语义，以及 parser 的 hunk provenance/坐标/计数、状态重置、binary 分离和无效文本拒绝；精确范围 `git diff --check` 无问题。审查未修改文件且没有重跑测试。
 - **独立复验：** 控制器随后在所有者上下文显式执行 `py -3.12 -m pytest -q`，完整后端返回 `32 passed in 0.57s`。未使用默认 Python 3.13；仅过程文档待提交。
 - **教训：** 任务级评审验证局部最小合同，主要模块仍必须有一次覆盖完整中间模型和所有任务交界的全分支复核；这次复核是 M03 可供下游规则模块依赖的最终门禁，而不是额外实现工作。
+
+## 2026-08-10 19:15:00 +08:00 — 阶段：T04.1 完成 / 固定通用规则目录
+
+- **Task / skill / context：** 在 `codex/general-rules` / `.worktrees/general-rules` 新隔离 worktree，控制器按 `using-git-worktrees`、`subagent-driven-development` 与 `test-driven-development` 执行 M04 的首个微任务。分支从通过最终复核的 M03 头部创建；基线由 `py -3.12 -m pytest -q` 真实验证为 `32 passed in 0.78s`。
+- **真实 RED → GREEN → REFACTOR：** fresh implementation subagent 先只写目录测试；控制器运行 Python 3.12 RED，得到 `ModuleNotFoundError: No module named 'app.rules'`。最小实现后聚焦 GREEN `1 passed in 0.03s`，完整后端 `33 passed in 0.64s`。规约审查发现测试未证明“不从环境读取配置”；控制器按 `receiving-code-review` 核实后，原 subagent 仅补环境不可配置测试。为保留真实 RED，临时令版本读取 `REVIEWLENS_RULESET_VERSION`，新测试失败为 `99.99.99 != 1.0.0`，随后立即还原字面量常量。最终相关套件 `2 passed in 0.03s`、完整后端 `34 passed in 0.63s`，均显式 `py -3.12`。
+- **实现与提交：** `bc1c055` (`feat(api): add fixed general rule catalog`) 只增加冻结 `RuleMetadata`、不可变 tuple `GENERAL_RULES`、`RULESET_VERSION="1.0.0"` 和 GEN-001…005 的稳定元数据；`79f9bc5` (`test(api): verify fixed ruleset ignores environment`) 只增加环境不可配置回归测试。未实现任何扫描、正则、API、持久化、脱敏或依赖。
+- **两阶段审查：** 首次规约审查提出 Important 测试覆盖缺口；fix round 1 的 scoped spec re-review 判定 **ADDRESSED**、无新 Critical/Important。随后 fresh quality reviewer 判定 **APPROVED**，无 Critical、Important 或 Minor。
+- **人工干预与教训：** 一次控制器全套件命令误在仓库根目录执行，产生 `ModuleNotFoundError: app`；按 `systematic-debugging` 读错误路径、与先前成功的 `apps/api` 运行比较后，根因为 cwd 而非代码，未修改实现并在正确目录复验通过。固定规则集不仅要冻结 Python 数据对象，也必须验证外部环境不会改变已发布规则版本或规则 ID。
