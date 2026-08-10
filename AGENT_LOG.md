@@ -411,3 +411,9 @@
 - **审查与真实修订：** 首次规约审查发现普通 `rm` 负例没有 `+`，未真正进入 parser；只修 fixture 后套件仍为 10、后端 42 项且 spec re-review ADDRESSED。quality reviewer 再发现 `\S+` 允许注释/分隔符冒充目标。原实现 subagent 在该修复回合未等待控制器 RED 即同时写入测试与正则；控制器未接受其为 TDD 证据，而是受控恢复旧 matcher。Python 3.12 真实 RED 显示 `mkfs # explanation` 误报 FindingDraft（`rm -rf;` 已被既有空白语法拒绝），再恢复保守 matcher。
 - **最终证据与审查：** `bb286a4` 后显式 Python 3.12 规则套件 `12 passed in 0.23s`、完整后端 `44 passed in 0.61s`、`git diff --check` 干净。scoped quality re-review 判定 P1 **ADDRESSED**，无新 Critical/Important；此前 spec re-review 已通过。
 - **提交与教训：** `aca3d57`、`2864b14`、`bb286a4`。安全文本规则不能将 shell 分隔符、注释或选项当作可执行目标；测试 Diff 必须带真实 `+` 前缀。实施 subagent 未等待 RED 的偏离已用受控 mutation 补证并记录，后续任务必须继续强制等待控制器 RED。
+
+## 2026-08-10 21:45:00 +08:00 — 阶段：T04.4 完成 / GEN-003 新增工作标记
+
+- **真实 TDD：** fresh subagent 先只添加 TODO、参数化 FIXME/HACK、`hacker` 不命中的测试；控制器 Python 3.12 RED 为缺少 `scan_gen_003`。最小实现后聚焦 `1 passed in 0.22s`、规则套件 `16 passed in 0.23s`、完整后端 `48 passed in 0.60s`，没有使用 Python 3.13。
+- **范围、提交与审查：** `4e612c4` 仅增加非二进制新增行的 standalone marker 扫描，使用 GEN-003 固定元数据；不改变其他规则、解析、脱敏、聚合或外部接口。fresh spec reviewer 与 fresh quality reviewer 均 APPROVED，无 Critical、Important 或 Minor。
+- **教训：** 对短标记使用单词边界并在测试中放置 `hacker` 等近似标识符，能避免低价值的常见误报；与前述规则同样，Finding 只基于 parser 已确认的新增行。
