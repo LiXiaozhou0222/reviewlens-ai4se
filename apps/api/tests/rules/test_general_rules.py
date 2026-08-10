@@ -4,8 +4,10 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from app.models.domain import FindingSource, Severity
+from app.diff_parser.parser import parse_unified_diff
 from app.rules import catalog
 from app.rules.catalog import GENERAL_RULES, RULESET_VERSION
+from app.rules.general import scan_gen_001
 
 
 def test_ruleset_catalog_is_fixed() -> None:
@@ -51,3 +53,71 @@ def test_ruleset_catalog_ignores_environment_configuration(monkeypatch: pytest.M
         "GEN-004",
         "GEN-005",
     ]
+
+
+def test_gen_001_finds_only_added_credential() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/config/settings.py b/config/settings.py",
+                "index 1234567..89abcde 100644",
+                "--- a/config/settings.py",
+                "+++ b/config/settings.py",
+                "@@ -1,2 +1,3 @@",
+                " SETTINGS = {}",
+                '+API_KEY = "rl_fake_token_12345678"',
+                " DEBUG = False",
+            ]
+        )
+    )
+
+    findings = scan_gen_001(parsed_diff)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.rule_id == "GEN-001"
+    assert finding.rule_version == RULESET_VERSION
+    assert finding.source is FindingSource.GENERAL_RULE
+    assert finding.severity is Severity.CRITICAL
+    assert finding.path == "config/settings.py"
+    assert finding.new_line == 2
+    assert finding.raw_excerpt == 'API_KEY = "rl_fake_token_12345678"'
+    assert finding.message == "A high-confidence credential was added."
+    assert finding.suggestion == "Remove the credential and use a secure secret store."
+
+
+def test_gen_001_ignores_credential_in_hunk_context_line() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/config/settings.py b/config/settings.py",
+                "index 1234567..89abcde 100644",
+                "--- a/config/settings.py",
+                "+++ b/config/settings.py",
+                "@@ -1,2 +1,3 @@",
+                ' API_KEY = "rl_fake_token_12345678"',
+                "+DEBUG = True",
+                " LOG_LEVEL = 'info'",
+            ]
+        )
+    )
+
+    assert scan_gen_001(parsed_diff) == ()
+
+
+def test_gen_001_ignores_added_environment_variable_reference() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/config/settings.py b/config/settings.py",
+                "index 1234567..89abcde 100644",
+                "--- a/config/settings.py",
+                "+++ b/config/settings.py",
+                "@@ -1 +1,2 @@",
+                " SETTINGS = {}",
+                "+API_KEY = process.env.API_KEY",
+            ]
+        )
+    )
+
+    assert scan_gen_001(parsed_diff) == ()
