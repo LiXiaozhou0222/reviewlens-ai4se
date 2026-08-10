@@ -121,3 +121,21 @@ def test_gen_001_ignores_added_environment_variable_reference() -> None:
     )
 
     assert scan_gen_001(parsed_diff) == ()
+
+
+def test_gen_001_ignores_added_template_expression() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/config/settings.py b/config/settings.py",
+                "index 1234567..89abcde 100644",
+                "--- a/config/settings.py",
+                "+++ b/config/settings.py",
+                "@@ -1 +1,2 @@",
+                " SETTINGS = {}",
+                '+API_KEY = "{{ secrets.API_KEY }}"',
+            ]
+        )
+    )
+
+    assert scan_gen_001(parsed_diff) == ()

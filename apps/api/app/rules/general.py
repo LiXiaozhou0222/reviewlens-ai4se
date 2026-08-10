@@ -7,7 +7,7 @@ from app.rules.catalog import GENERAL_RULES, RULESET_VERSION
 
 _GEN_001 = next(rule for rule in GENERAL_RULES if rule.rule_id == "GEN-001")
 _CREDENTIAL_LITERAL = re.compile(
-    r"""(?i)(?<![A-Za-z0-9_])(?:["'])?(?:api_key|apikey|token|access_token|auth_token|password|passwd|secret)(?:["'])?(?![A-Za-z0-9_])\s*[:=]\s*(?P<quote>["'])(?P<value>(?![^"']*\$\{)[^"']+)(?P=quote)"""
+    r"""(?i)(?<![A-Za-z0-9_])(?:["'])?(?:api_key|apikey|token|access_token|auth_token|password|passwd|secret)(?:["'])?(?![A-Za-z0-9_])\s*[:=]\s*(?P<quote>["'])(?P<value>(?![^"']*(?:\$\{|\{\{))[^"']+)(?P=quote)"""
 )
 
 
