@@ -417,3 +417,9 @@
 - **真实 TDD：** fresh subagent 先只添加 TODO、参数化 FIXME/HACK、`hacker` 不命中的测试；控制器 Python 3.12 RED 为缺少 `scan_gen_003`。最小实现后聚焦 `1 passed in 0.22s`、规则套件 `16 passed in 0.23s`、完整后端 `48 passed in 0.60s`，没有使用 Python 3.13。
 - **范围、提交与审查：** `4e612c4` 仅增加非二进制新增行的 standalone marker 扫描，使用 GEN-003 固定元数据；不改变其他规则、解析、脱敏、聚合或外部接口。fresh spec reviewer 与 fresh quality reviewer 均 APPROVED，无 Critical、Important 或 Minor。
 - **教训：** 对短标记使用单词边界并在测试中放置 `hacker` 等近似标识符，能避免低价值的常见误报；与前述规则同样，Finding 只基于 parser 已确认的新增行。
+
+## 2026-08-10 22:15:00 +08:00 — 阶段：T04.5 完成 / GEN-004 非回环 HTTP
+
+- **真实 TDD：** fresh subagent 先添加公网 HTTP、参数化 loopback、HTTPS 与 localhost 子域测试；控制器 Python 3.12 RED 为缺少 `scan_gen_004`。最小实现后聚焦 `5 passed in 0.25s`、规则套件 `24 passed in 0.24s`、完整后端 `56 passed in 0.62s`。
+- **范围与审查：** `12cf519` 仅扫描非二进制新增行的 literal `http://`，精确豁免 localhost（大小写无关）、127.0.0.1 与 IPv6 loopback，且不访问网络。fresh spec 与 quality review 均 APPROVED，无 Critical、Important 或 Minor。
+- **教训：** 地址安全边界必须是精确主机比较而非前缀比较；`localhost.example` 与 `127.0.0.10` 不能因相似字符串被静默豁免。
