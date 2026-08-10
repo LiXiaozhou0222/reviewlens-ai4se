@@ -29,7 +29,11 @@ def parse_unified_diff(text: str) -> ParsedDiff:
     new_line: int | None = None
 
     for line in text.splitlines():
-        if line.startswith("+++ "):
+        if line.startswith("diff --git "):
+            new_line = None
+            continue
+
+        if line.startswith("+++ b/") and new_line is None:
             if new_path is not None:
                 files.append(ParsedFile(new_path, tuple(added_lines)))
             new_path = line[4:].removeprefix("b/")
