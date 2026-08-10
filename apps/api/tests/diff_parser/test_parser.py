@@ -76,9 +76,26 @@ Binary files a/assets/logo.png and b/assets/logo.png differ
 
     binary_file = parsed.files[0]
 
-    assert binary_file.change_type == "binary"
+    assert binary_file.change_type == "modified"
+    assert binary_file.is_binary is True
     assert binary_file.new_path == "assets/logo.png"
     assert binary_file.added_lines == ()
+
+
+def test_new_binary_file_has_added_status_and_binary_flag() -> None:
+    parsed = parse_unified_diff(
+        """diff --git a/assets/logo.png b/assets/logo.png
+new file mode 100644
+index 0000000..2222222
+Binary files /dev/null and b/assets/logo.png differ
+"""
+    )
+    parsed_file = parsed.files[0]
+    assert parsed_file.change_type == "added"
+    assert parsed_file.is_binary is True
+    assert parsed_file.old_path is None
+    assert parsed_file.new_path == "assets/logo.png"
+    assert parsed_file.added_lines == ()
 
 
 def test_file_header_is_not_an_added_code_line() -> None:

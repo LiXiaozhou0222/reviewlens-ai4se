@@ -31,7 +31,8 @@ class ParsedHunk:
 class ParsedFile:
     new_path: str
     added_lines: tuple[AddedLine, ...]
-    change_type: str = "modified"
+    change_type: Literal["added", "modified", "deleted", "renamed"] = "modified"
+    is_binary: bool = False
     old_path: str | None = None
     hunks: tuple[ParsedHunk, ...] = ()
     added_line_count: int = 0
@@ -54,7 +55,8 @@ def parse_unified_diff(text: str) -> ParsedDiff:
     files: list[ParsedFile] = []
     new_path: str | None = None
     old_path: str | None = None
-    change_type = "modified"
+    change_type: Literal["added", "modified", "deleted", "renamed"] = "modified"
+    is_binary = False
     added_lines: list[AddedLine] = []
     hunks: list[ParsedHunk] = []
     hunk_lines: list[HunkLine] | None = None
@@ -79,6 +81,7 @@ def parse_unified_diff(text: str) -> ParsedDiff:
                     new_path,
                     tuple(added_lines),
                     change_type=change_type,
+                    is_binary=is_binary,
                     old_path=old_path,
                     hunks=tuple(hunks),
                     added_line_count=sum(
@@ -101,6 +104,7 @@ def parse_unified_diff(text: str) -> ParsedDiff:
             old_path = paths[2].removeprefix("a/")
             new_path = paths[3].removeprefix("b/")
             change_type = "modified"
+            is_binary = False
             added_lines = []
             hunks = []
             hunk_lines = None
@@ -118,6 +122,20 @@ def parse_unified_diff(text: str) -> ParsedDiff:
             old_path = line[4:].removeprefix("a/")
             continue
 
+        if line == "--- /dev/null" and new_line is None:
+            change_type = "added"
+            old_path = None
+            continue
+
+        if line.startswith("new file mode "):
+            change_type = "added"
+            old_path = None
+            continue
+
+        if line.startswith("deleted file mode "):
+            change_type = "deleted"
+            continue
+
         if line == "+++ /dev/null" and new_line is None:
             change_type = "deleted"
             continue
@@ -133,7 +151,7 @@ def parse_unified_diff(text: str) -> ParsedDiff:
             continue
 
         if line.startswith("Binary files ") and line.endswith(" differ"):
-            change_type = "binary"
+            is_binary = True
             continue
 
         hunk = _HUNK_HEADER.match(line)
