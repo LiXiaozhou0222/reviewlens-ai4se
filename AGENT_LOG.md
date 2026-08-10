@@ -404,3 +404,10 @@
 - **规约修复回合：** spec reviewer 发现 `{{ secrets.API_KEY }}` 模板表达式会被误报。控制器核实它属于已确认的保守“高置信/不确定不报”边界后，原 implementation subagent 先添加该 synthetic 失败测试；Python 3.12 RED 显示一个 FindingDraft 而非空 tuple。最小 regex 修复同时排除 `${...}` 和 `{{...}}`；最终规则套件 `6 passed in 0.25s`、完整后端 `38 passed in 0.57s`。
 - **提交与审查：** `cb3bc4d` (`feat(api): detect added credentials`) 与 `294d602` (`fix(api): ignore credential template expressions`)。scoped spec re-review 判定原 finding **ADDRESSED**、无新 Critical/Important；fresh quality reviewer **APPROVED**，无 Critical、Important 或 Minor。
 - **教训：** 凭据检测宁可保守漏报也不应将模板、环境引用等动态值描述为已泄露的硬编码凭据；安全规则的“高置信”边界必须用会失败的真实回归测试固定下来。M06 仍负责统一脱敏，T04.2 不提前持久化或导出原始 excerpt。
+
+## 2026-08-10 21:05:00 +08:00 — 阶段：T04.3 完成 / GEN-002 高置信破坏操作
+
+- **任务与范围：** fresh implementation subagent 仅增加 `scan_gen_002`：扫描非二进制新增行的 `rm -rf/-fr`、DROP/TRUNCATE table/database、`mkfs`，只创建 GEN-002 Finding，绝不执行命令。初始 Python 3.12 RED 为缺少 `scan_gen_002`；首轮最终 GREEN 为规则套件 10 项、后端 42 项。
+- **审查与真实修订：** 首次规约审查发现普通 `rm` 负例没有 `+`，未真正进入 parser；只修 fixture 后套件仍为 10、后端 42 项且 spec re-review ADDRESSED。quality reviewer 再发现 `\S+` 允许注释/分隔符冒充目标。原实现 subagent 在该修复回合未等待控制器 RED 即同时写入测试与正则；控制器未接受其为 TDD 证据，而是受控恢复旧 matcher。Python 3.12 真实 RED 显示 `mkfs # explanation` 误报 FindingDraft（`rm -rf;` 已被既有空白语法拒绝），再恢复保守 matcher。
+- **最终证据与审查：** `bb286a4` 后显式 Python 3.12 规则套件 `12 passed in 0.23s`、完整后端 `44 passed in 0.61s`、`git diff --check` 干净。scoped quality re-review 判定 P1 **ADDRESSED**，无新 Critical/Important；此前 spec re-review 已通过。
+- **提交与教训：** `aca3d57`、`2864b14`、`bb286a4`。安全文本规则不能将 shell 分隔符、注释或选项当作可执行目标；测试 Diff 必须带真实 `+` 前缀。实施 subagent 未等待 RED 的偏离已用受控 mutation 补证并记录，后续任务必须继续强制等待控制器 RED。
