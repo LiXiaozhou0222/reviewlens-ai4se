@@ -396,3 +396,11 @@
 - **实现与提交：** `bc1c055` (`feat(api): add fixed general rule catalog`) 只增加冻结 `RuleMetadata`、不可变 tuple `GENERAL_RULES`、`RULESET_VERSION="1.0.0"` 和 GEN-001…005 的稳定元数据；`79f9bc5` (`test(api): verify fixed ruleset ignores environment`) 只增加环境不可配置回归测试。未实现任何扫描、正则、API、持久化、脱敏或依赖。
 - **两阶段审查：** 首次规约审查提出 Important 测试覆盖缺口；fix round 1 的 scoped spec re-review 判定 **ADDRESSED**、无新 Critical/Important。随后 fresh quality reviewer 判定 **APPROVED**，无 Critical、Important 或 Minor。
 - **人工干预与教训：** 一次控制器全套件命令误在仓库根目录执行，产生 `ModuleNotFoundError: app`；按 `systematic-debugging` 读错误路径、与先前成功的 `apps/api` 运行比较后，根因为 cwd 而非代码，未修改实现并在正确目录复验通过。固定规则集不仅要冻结 Python 数据对象，也必须验证外部环境不会改变已发布规则版本或规则 ID。
+
+## 2026-08-10 20:05:00 +08:00 — 阶段：T04.2 完成 / GEN-001 新增行高置信凭据
+
+- **Task / skill / context：** fresh implementation subagent 按 `subagent-driven-development` / `test-driven-development` 在 M04 worktree 仅实现 `scan_gen_001(ParsedDiff)`。合同限定为：只读非二进制 `ParsedFile.added_lines`，使用现有 GEN-001 元数据，只有敏感变量/属性名称以 `:` 或 `=` 赋值给带引号的非空字面量才报告；所有 fixture 均为 `rl_fake_*` 虚构值。
+- **真实 RED → GREEN：** 先写三项测试（命中新增、忽略 hunk context、忽略 `process.env`）；控制器执行 Python 3.12 RED，得到 `ModuleNotFoundError: No module named 'app.rules.general'`。最小实现后聚焦 GREEN `1 passed in 0.21s`、规则套件 `5 passed in 0.20s`、完整后端 `37 passed in 0.55s`。
+- **规约修复回合：** spec reviewer 发现 `{{ secrets.API_KEY }}` 模板表达式会被误报。控制器核实它属于已确认的保守“高置信/不确定不报”边界后，原 implementation subagent 先添加该 synthetic 失败测试；Python 3.12 RED 显示一个 FindingDraft 而非空 tuple。最小 regex 修复同时排除 `${...}` 和 `{{...}}`；最终规则套件 `6 passed in 0.25s`、完整后端 `38 passed in 0.57s`。
+- **提交与审查：** `cb3bc4d` (`feat(api): detect added credentials`) 与 `294d602` (`fix(api): ignore credential template expressions`)。scoped spec re-review 判定原 finding **ADDRESSED**、无新 Critical/Important；fresh quality reviewer **APPROVED**，无 Critical、Important 或 Minor。
+- **教训：** 凭据检测宁可保守漏报也不应将模板、环境引用等动态值描述为已泄露的硬编码凭据；安全规则的“高置信”边界必须用会失败的真实回归测试固定下来。M06 仍负责统一脱敏，T04.2 不提前持久化或导出原始 excerpt。
