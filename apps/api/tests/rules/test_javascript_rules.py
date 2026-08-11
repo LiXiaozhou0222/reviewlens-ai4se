@@ -12,6 +12,70 @@ from app.rules.javascript import (
 )
 
 
+JS_SCANNERS = (
+    scan_js_001,
+    scan_js_002,
+    scan_js_003,
+    scan_js_004,
+    scan_js_005,
+    scan_js_006,
+)
+
+
+def test_js_rules_do_not_apply_to_python() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/legacy.py b/src/legacy.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/legacy.py",
+                "+++ b/src/legacy.py",
+                "@@ -1 +1,7 @@",
+                " existing = True",
+                '+console.log("diagnostic")',
+                "+debugger;",
+                '+eval("legacy_expression")',
+                "+preview.innerHTML = rendered_markup",
+                "+try { } catch (error) { }",
+                "+fetch('/api/items');",
+            ]
+        )
+    )
+
+    for scanner in JS_SCANNERS:
+        assert scanner(parsed_diff) == ()
+
+
+def test_js_rules_do_not_apply_to_context_or_deleted_lines() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/legacy.ts b/src/legacy.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/legacy.ts",
+                "+++ b/src/legacy.ts",
+                "@@ -1,12 +1,7 @@",
+                ' console.log("diagnostic")',
+                " debugger;",
+                ' eval("legacyExpression")',
+                " preview.innerHTML = renderedMarkup;",
+                " try { } catch (error) { }",
+                " fetch('/api/items');",
+                '-console.log("removed diagnostic")',
+                "-debugger;",
+                '-eval("removedExpression")',
+                "-preview.innerHTML = removedMarkup;",
+                "-try { } catch (error) { }",
+                "-fetch('/api/removed');",
+                "+export const unchanged = true;",
+            ]
+        )
+    )
+
+    for scanner in JS_SCANNERS:
+        assert scanner(parsed_diff) == ()
+
+
 def test_js_001_finds_added_console_log() -> None:
     parsed_diff = parse_unified_diff(
         "\n".join(
