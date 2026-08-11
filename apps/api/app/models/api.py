@@ -16,6 +16,7 @@ class FindingDraft(BaseModel):
     path: str
     new_line: int | None
     raw_excerpt: str
+    match_start: int | None = None
     message: str
     suggestion: str
 

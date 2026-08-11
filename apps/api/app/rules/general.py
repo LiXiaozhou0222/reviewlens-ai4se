@@ -142,6 +142,7 @@ def scan_gen_004(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
                         path=parsed_file.new_path,
                         new_line=added_line.new_line,
                         raw_excerpt=added_line.content,
+                        match_start=match.start(),
                         message=_GEN_004.message,
                         suggestion=_GEN_004.suggestion,
                     )
