@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 30，待执行 P0 为 32，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 31，待执行 P0 为 31，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -55,6 +55,7 @@
 | T05.4 | `0d8adb7` |
 | T05.5 | `f9cc688` |
 | T05.6 | `9cdd99c` |
+| T08.1 | `3d53fb4` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
@@ -112,7 +113,6 @@ flowchart LR
 | T06.1 | `app/reviews/redaction.py`、`tests/reviews/test_finding_redaction.py`；GEN-001 不可逆替换。 | `...test_gen_001_never_retains_secret_or_tail -q` 先失败后 1 passed。 |
 | T06.2 | `app/reviews/schemas.py`、`tests/reviews/test_redacted_schema.py`；SanitizedFinding 拒绝 raw 字段。 | `...test_sanitized_finding_has_no_raw_secret_field -q` 先失败后 1 passed。 |
 | T06.3 | 同上；Provider payload 和 AI Finding 的二次脱敏。 | `...test_ai_payload_and_ai_finding_are_redacted -q` 先失败后 1 passed。 |
-| T08.1 | `app/credentials/vault.py`、`service.py`、`tests/credentials/test_vault_lifecycle.py`；scrypt/AES-GCM、原子写入、内存解锁。 | `...test_correct_password_unlocks_in_memory_only -q` 先失败后 1 passed。 |
 | T08.3 | `app/credentials/service.py`、`tests/credentials/test_vault_failures.py`；统一失败、延迟、损坏 Vault。 | `...test_wrong_password_returns_uniform_failure -q` 先失败后 1 passed。 |
 | T08.4 | Vault 更新、清除、重启锁定、掩码状态。 | `...test_clear_removes_file_and_memory_credential -q` 先失败后 1 passed。 |
 | T09.1 | `app/providers/base.py`、`mock_provider.py`、`tests/providers/test_mock_provider.py`；稳定无网络 Mock。 | `...test_mock_result_is_repeatable_and_network_free -q` 先失败后 1 passed。 |
