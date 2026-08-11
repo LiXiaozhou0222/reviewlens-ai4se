@@ -1,5 +1,32 @@
 # AGENT_LOG
 
+## 2026-08-12 00:45:00 +08:00 — T05.7 narrowed-rule architecture pause
+
+- **Skills / context:** The controller used `test-driven-development`,
+  `receiving-code-review`, and `systematic-debugging` while executing the
+  user-authorized fresh T05.7 branch. All executed test commands used
+  `py -3.12`; no default Python, external provider, or user code execution
+  was used.
+- **Real evidence:** The initial narrowed implementation and repair commits
+  are `40ac8f6`, `d1a5a81`, and `ae416a8`. Controller evidence reached
+  focused 9 passed, JS rules 90 passed, and full backend 159 passed before
+  the latest scoped review. Independent reviews then reproduced further
+  Important boundary failures: generic TSX arrows were classified as JSX,
+  nested JSX text could be scanned as code, and nested default object
+  literals could be classified as supported parameters.
+- **Root-cause conclusion:** The contract simultaneously requires correct
+  discrimination of nested TSX/JSX, generic TypeScript syntax, and nested
+  object literals while forbidding a tokenizer, AST, TypeScript compiler,
+  or parsing dependency. Three successive boundary-repair cycles exposed
+  shared lexical-state coupling; further local patches would be blind
+  architecture drift rather than a high-confidence rule.
+- **Status / lesson:** T05.7 is paused before any fourth repair. Existing
+  commits and test/review evidence are retained; they are not approved task
+  completion evidence. A user decision is required before scope or parsing
+  architecture changes. Conservative scope must be chosen before adding
+  lexical complexity, rather than attempting to reconstruct TypeScript/TSX
+  syntax through accumulating regular-expression exceptions.
+
 ## 2026-08-05 21:37:46 +08:00 — 阶段：需求澄清 / 课程要求审计
 
 - **Task / 当前工作**：在不进入实现阶段的前提下，完整阅读 `AGENTS.md`、两份课程要求、`README.md` 与当前规约/计划/过程/日志文件；审计 B 类项目要求。
