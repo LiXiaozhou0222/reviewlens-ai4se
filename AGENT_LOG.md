@@ -476,3 +476,10 @@
 - **真实 TDD：** fresh subagent 先写测试，控制器 Python 3.12 RED 为缺少 `scan_js_005`。GREEN 使用实际测试节点 `test_js_005_anchors_empty_catch_to_added_line` 得到 `1 passed`、JS `55 passed`、后端 `124 passed`；PLAN 预填节点名与实际命名不同，已如实记录。
 - **修复与审查：** spec reviewer 发现一行 fully-added `try...catch {}` 漏报；新增失败测试后 Python 3.12 RED 为 0 findings，最小 inline matcher 修复后单点 `1 passed`、JS `56 passed`、后端 `125 passed`。fresh scoped spec re-review 和 fresh quality review 均 APPROVED，无 Critical/Important。
 - **提交与范围：** `f9cc688` 只增加 JS-005；完整结构必须连续且全为新增行，Finding 锚定新增 catch 行；不扩展解析、依赖、网络或其他 JS 规则。
+
+## 2026-08-11 20:14:43 +08:00 — 阶段：T05.6 完成 / JS-006 未处理 fetch
+
+- **Task / skill / context：** 控制器在 `codex/js-rules-risk` 隔离 worktree 中，按 `subagent-driven-development` 与 `test-driven-development` 使用 fresh implementation subagent 实施 JS-006；规则只检查 JS/TS 支持文件的新增行，不执行用户代码、不访问网络，也不引入依赖。
+- **真实 TDD 证据：** subagent 先仅添加测试；控制器从 `apps/api` 使用 `py -3.12 -m pytest` 得到预期 RED：缺少 `scan_js_006`。最小实现后，控制器使用实际测试节点 `test_js_006_finds_unhandled_added_fetch` 验证聚焦 GREEN `1 passed`、JS 规则 `64 passed`、完整后端 `133 passed`。计划预填节点名 `test_js_006_finds_unhandled_added_fetch` 与实际命名顺序不一致，已如实记录；未采纳其他 Python 版本的测试证据。
+- **审查与提交：** fresh spec review 与 fresh code-quality review 均为 **APPROVED**，无 Critical 或 Important。`9cdd99c` (`feat(api): detect unhandled JS fetch calls`) 仅增加固定 JS-006 Medium/language_rule/v1.0.0 元数据、保守的 standalone `fetch()` 识别和合成回归测试；`await`、`return`、赋值、链式处理、注释/字符串、二进制或不支持文件均不报告。
+- **教训：** 对“未处理”这类需要语境判断的规则，应宁可跳过不确定表达式，也不能把可见的 `fetch` 文本误表述为已确认风险；计划中的预填测试节点必须以实际存在的测试名和真实 Python 3.12 输出替换。
