@@ -1,9 +1,11 @@
-# Generated from the T01.1 bounded project dependencies with Python 3.12.10.
+# Generated from the bounded project dependencies through T08.1 with Python 3.12.10.
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.14.2
+cffi==2.1.1
 click==8.4.2
 colorama==0.4.6
+cryptography==44.0.3
 fastapi==0.141.1
 h11==0.16.0
 idna==3.18
@@ -12,6 +14,7 @@ packaging==26.3
 pluggy==1.6.0
 pydantic==2.13.4
 pydantic_core==2.46.4
+pycparser==3.0
 Pygments==2.20.0
 pytest==8.4.2
 starlette==1.6.0
