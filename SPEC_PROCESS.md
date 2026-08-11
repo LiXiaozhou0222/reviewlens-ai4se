@@ -1,5 +1,11 @@
 # ReviewLens 规约生成过程
 
+## 2026-08-12：JS-007 架构冲突后的正式移除
+
+在从批准基线重新执行的 T05.7 中，控制器使用 Python 3.12 获得了聚焦 9 passed、JavaScript 规则 90 passed、完整后端 159 passed 的真实测试证据；这些结果不等于规约批准。独立 scoped review 随后复现了三类重要冲突：TSX 嵌套 JSX 文本可被误报为代码、泛型箭头函数可被误判为 JSX、嵌套对象默认值可被误判为支持的类型参数。真实过程与根因已记录在 `3852a88`。
+
+用户明确拒绝 tokenizer、AST、TypeScript Compiler 和外部解析依赖，并在 JS-007 为 Low severity 的前提下选择正式移除该规则，而不是继续累积词法补丁。SPEC、PLAN、README 与正式实现随之调整：v1 JavaScript/TypeScript 规则集为 JS-001…JS-006；T05.7 标记为 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不记作成功完成，也不声称此前 GREEN 已满足任务。旧代码、测试和审查提交保留为真实证据，不复用为正式能力。
+
 ## 记录范围与真实性声明
 
 - 本文件仅记录已经发生的规约工作；未发生的 brainstorming 迭代、设计签字、冷启动试运行或 SPEC/PLAN 修订均不补写或虚构。

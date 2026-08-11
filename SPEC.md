@@ -182,13 +182,8 @@ flowchart LR
 | `JS-004` | JS/TS | 新增 `innerHTML` 赋值或 `dangerouslySetInnerHTML` | High | 可读有限上下文确认属性/赋值形式 |
 | `JS-005` | JS/TS | 新增的字面空 `catch` 或明显吞异常结构 | Medium | 仅在整个结构可归因新增行时报告 |
 | `JS-006` | JS/TS | 新增、可明确识别为未 `await`/未 `return`/未处理的 `fetch()` 调用 | Medium | 不做全程序 Promise 推断；不确定时不报告 |
-| `JS-007` | TypeScript（仅 `.ts`、`.tsx`） | 新增高置信显式 `any` 类型 | Low | 仅首期明确支持的类型语境；保守漏报优于明显误报 |
 
 规则修改只能随新应用版本发布。误报由用户结合上下文判断，并在 README 记录已知限制；AI 可以提供额外解释，但不得否定、删除或覆盖确定性 Finding。
-
-`JS-007` 的首期范围固定为新增、非二进制 `.ts`/`.tsx` 代码行中能够在单行高置信识别的下列形式：变量声明的 `const`/`let`/`var <identifier>: any`；具名函数或箭头函数签名中明确的参数 `: any` 或返回类型 `: any`；以及完整调用或索引表达式后的 `) as any` 或 `] as any`。Finding 必须锚定该新增行。`JS-007` 不扫描 `.js`/`.jsx`，也不承诺覆盖 `interface`/`type` object member、跨行断开的 type assertion、裸标识符 `value as any` 或其他需要更强语法上下文才能可靠区分的形式。
-
-为了避免把非代码文本表述为类型风险，`JS-007` 必须不报告 JSX 文本、注释、字符串、模板文本、正则字面量、`import`/`export` alias、语句标签、对象字面量、删除行、上下文行、二进制文件和不支持路径。首期不得为 JS-007 引入 tokenizer、AST、TypeScript Compiler、外部解析依赖或扩展到其他规则；不能可靠识别时必须跳过。该限制是基于真实误报回归作出的有意取舍，不等于代码不存在 `any` 使用。
 
 ### 4.5 Finding 去重、等级和排序
 

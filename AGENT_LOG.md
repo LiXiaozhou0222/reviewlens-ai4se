@@ -1,5 +1,21 @@
 # AGENT_LOG
 
+## 2026-08-12 00:55:00 +08:00 — T05.7 approved removal
+
+- **Human decision:** After reviewing the architecture evidence in `3852a88`,
+  the user chose option 3: remove JS-007 from the first release. The user
+  rejected a tokenizer, AST, TypeScript Compiler, and parsing dependency.
+- **Reason and evidence:** Although Python 3.12 had reached 159 passing
+  backend tests, independent reviews found three real conflicts: nested TSX
+  JSX text, generic arrow syntax, and nested object defaults. JS-007 is Low
+  severity and does not justify a new parsing subsystem in the release window.
+- **Required revision:** JS/TS v1 rules are JS-001…JS-006. T05.7 is
+  `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`, not completed; its prior
+  code, tests, RED/GREEN results, reviews, and commits remain evidence only.
+  Scope revision must remove JS-007 metadata/scanner/tests/document claims,
+  check that risk tests do not depend on it, and then continue with fresh
+  implementation from T05.8.
+
 ## 2026-08-12 00:45:00 +08:00 — T05.7 narrowed-rule architecture pause
 
 - **Skills / context:** The controller used `test-driven-development`,
