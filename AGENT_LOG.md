@@ -458,3 +458,9 @@
 - **真实 TDD：** fresh implementation subagent 先只增加 JS-002 测试；控制器从 `apps/api` 用 `py -3.12` 得到预期 RED：`ImportError: cannot import name 'scan_js_002'`。最小实现后，聚焦 `1 passed`、JS 规则文件 `19 passed`、规则套件 `56 passed`、完整后端 `88 passed`。
 - **审查与修复：** fresh spec reviewer APPROVED。fresh quality reviewer 发现 `debugger` 在 `}` 前的 ECMAScript ASI 合法形态漏报；原 subagent 先添加 `if (enabled) { debugger }` 的失败测试，控制器 Python 3.12 RED 显示 `len(findings) == 0`，再仅令 matcher 接受 `}` 终止符。修复后聚焦 `1 passed`、JS 文件 `20 passed`、后端 `89 passed`；fresh scoped quality re-review APPROVED，无 Critical/Important。
 - **提交与范围：** `20a1205` 只增加 JS-002 固定 metadata、扫描与 9 项相关测试，不改变 JS-001、解析、依赖或外部服务；未使用 Python 3.13、网络、真实 OpenAI 或真实凭据。
+
+## 2026-08-11 11:25:45 +08:00 — 阶段：T05.3 完成 / JS-003 direct eval
+
+- **真实 TDD：** fresh subagent 先写 JS-003 测试；Python 3.12 RED 为缺少 `scan_js_003`。PLAN 的预填节点名与实际测试函数不一致，控制器按真实函数 `test_js_003_finds_added_eval` 运行 GREEN，得到 `1 passed`、JS 文件 `30 passed`、后端 `99 passed`。
+- **审查与修复：** spec review 发现方法声明和 JSX 文本误报；回归 RED 为 3 个失败，修复后 JS `33 passed`、后端 `102 passed`。质量 reviewer 随后担心控制流 `if (eval(input)) {}` 被误排除；控制器用新增测试实证其已通过，并确认过滤只读取 eval 自身右括号后的字符。fresh scoped re-review 最终批准，并确认此前唯一的暂存覆盖问题已修复。
+- **提交与边界：** `99657fd` 只实现 JS-003 和合成测试；没有依赖、网络、用户代码执行或真实凭据。Finding 仅锚定新增行，保守排除方法/JSX lookalike，保留直接调用和模板插值调用。
