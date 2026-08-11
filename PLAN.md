@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 32，待执行 P0 为 30，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 33，待执行 P0 为 29，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -57,6 +57,7 @@
 | T05.6 | `9cdd99c` |
 | T05.8 | `9a79c26` |
 | T05.9 | `e181734` |
+| T05.10 | `8b367ce` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
@@ -108,7 +109,6 @@ flowchart LR
 
 | Task | 文件与唯一职责 | RED / GREEN 验收 |
 | --- | --- | --- |
-| T05.10 | `app/rules/risk.py`、`tests/rules/test_risk.py`；固定聚合与稳定排序，AI 不计入。 | `...test_three_deduplicated_medium_findings_escalate_to_high -q` 先失败后 1 passed。 |
 | T06.1 | `app/reviews/redaction.py`、`tests/reviews/test_finding_redaction.py`；GEN-001 不可逆替换。 | `...test_gen_001_never_retains_secret_or_tail -q` 先失败后 1 passed。 |
 | T06.2 | `app/reviews/schemas.py`、`tests/reviews/test_redacted_schema.py`；SanitizedFinding 拒绝 raw 字段。 | `...test_sanitized_finding_has_no_raw_secret_field -q` 先失败后 1 passed。 |
 | T06.3 | 同上；Provider payload 和 AI Finding 的二次脱敏。 | `...test_ai_payload_and_ai_finding_are_redacted -q` 先失败后 1 passed。 |
