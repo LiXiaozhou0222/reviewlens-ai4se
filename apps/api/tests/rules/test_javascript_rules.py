@@ -2,7 +2,7 @@ import pytest
 
 from app.diff_parser.parser import AddedLine, ParsedDiff, ParsedFile, parse_unified_diff
 from app.models.domain import FindingSource, Severity
-from app.rules.javascript import scan_js_001, scan_js_002, scan_js_003
+from app.rules.javascript import scan_js_001, scan_js_002, scan_js_003, scan_js_004
 
 
 def test_js_001_finds_added_console_log() -> None:
@@ -476,3 +476,241 @@ def test_js_003_ignores_unsupported_binary_and_deleted_eval_calls() -> None:
 
     assert scan_js_003(parsed_diff) == ()
     assert scan_js_003(binary_diff) == ()
+
+
+def test_js_004_finds_added_inner_html() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/preview.ts b/src/preview.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/preview.ts",
+                "+++ b/src/preview.ts",
+                "@@ -7,2 +7,3 @@",
+                " export const enabled = true;",
+                "+preview.innerHTML = renderedMarkup;",
+                " export const mode = 'safe';",
+            ]
+        )
+    )
+
+    findings = scan_js_004(parsed_diff)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.rule_id == "JS-004"
+    assert finding.rule_version == "1.0.0"
+    assert finding.source is FindingSource.LANGUAGE_RULE
+    assert finding.severity is Severity.HIGH
+    assert finding.path == "src/preview.ts"
+    assert finding.new_line == 8
+    assert finding.raw_excerpt == "preview.innerHTML = renderedMarkup;"
+    assert finding.message
+    assert finding.suggestion
+
+
+def test_js_004_finds_added_dangerously_set_inner_html() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/preview.tsx b/src/preview.tsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/preview.tsx",
+                "+++ b/src/preview.tsx",
+                "@@ -1 +1,2 @@",
+                " export const Preview = () => null;",
+                "+export const HtmlPreview = () => <div "
+                "dangerouslySetInnerHTML={{ __html: markup }} />;",
+            ]
+        )
+    )
+
+    findings = scan_js_004(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "JS-004"
+    assert findings[0].path == "src/preview.tsx"
+    assert findings[0].new_line == 2
+    assert findings[0].raw_excerpt == (
+        "export const HtmlPreview = () => <div "
+        "dangerouslySetInnerHTML={{ __html: markup }} />;"
+    )
+
+
+def test_js_004_finds_dangerously_set_inner_html_in_multiline_jsx_tag() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/preview.tsx b/src/preview.tsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/preview.tsx",
+                "+++ b/src/preview.tsx",
+                "@@ -1 +1,6 @@",
+                " export const Preview = () => null;",
+                "+export const HtmlPreview = () => (",
+                "+  <div",
+                "+    dangerouslySetInnerHTML={{ __html: markup }}",
+                "+  />",
+                "+);",
+            ]
+        )
+    )
+
+    findings = scan_js_004(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "JS-004"
+    assert findings[0].path == "src/preview.tsx"
+    assert findings[0].new_line == 4
+    assert findings[0].raw_excerpt == "    dangerouslySetInnerHTML={{ __html: markup }}"
+
+
+def test_js_004_keeps_multiline_jsx_tag_open_through_attribute_expression() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/preview.tsx b/src/preview.tsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/preview.tsx",
+                "+++ b/src/preview.tsx",
+                "@@ -1 +1,7 @@",
+                " export const Preview = () => null;",
+                "+export const HtmlPreview = () => (",
+                "+  <div",
+                "+    data-ready={count > 0}",
+                "+    dangerouslySetInnerHTML={{ __html: markup }}",
+                "+  />",
+                "+);",
+            ]
+        )
+    )
+
+    findings = scan_js_004(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].new_line == 5
+    assert findings[0].raw_excerpt == "    dangerouslySetInnerHTML={{ __html: markup }}"
+
+
+def test_js_004_ignores_bare_binding_inside_jsx_attribute_expression() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/preview.tsx b/src/preview.tsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/preview.tsx",
+                "+++ b/src/preview.tsx",
+                "@@ -1 +1,4 @@",
+                " export const Preview = () => null;",
+                "+<div",
+                "+ onClick={() => { dangerouslySetInnerHTML = false; }}",
+                "+/>",
+            ]
+        )
+    )
+
+    assert scan_js_004(parsed_diff) == ()
+
+
+def test_js_004_ignores_bare_binding_after_comparison() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/preview.tsx b/src/preview.tsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/preview.tsx",
+                "+++ b/src/preview.tsx",
+                "@@ -1 +1,3 @@",
+                " export const Preview = () => null;",
+                "+const ready = count < limit;",
+                "+let dangerouslySetInnerHTML = false;",
+            ]
+        )
+    )
+
+    assert scan_js_004(parsed_diff) == ()
+
+
+def test_js_004_ignores_inner_html_inside_block_comment_started_by_hunk_context() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/preview.ts b/src/preview.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/preview.ts",
+                "+++ b/src/preview.ts",
+                "@@ -1,2 +1,3 @@",
+                " /* legacy unsafe rendering",
+                "+preview.innerHTML = renderedMarkup;",
+                " */",
+            ]
+        )
+    )
+
+    assert scan_js_004(parsed_diff) == ()
+
+
+@pytest.mark.parametrize(
+    "added_line",
+    [
+        "// preview.innerHTML = renderedMarkup;",
+        "const snippet = 'preview.innerHTML = renderedMarkup;';",
+        "const snippet = `dangerouslySetInnerHTML={{ __html: markup }}`;",
+        "preview.innerHTML;",
+        "preview.notInnerHTML = renderedMarkup;",
+        "const dangerouslySetInnerHTMLEnabled = true;",
+        "let dangerouslySetInnerHTML = false;",
+    ],
+)
+def test_js_004_ignores_comments_strings_and_lookalikes(added_line: str) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/preview.jsx b/src/preview.jsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/preview.jsx",
+                "+++ b/src/preview.jsx",
+                "@@ -1 +1,2 @@",
+                " export const Preview = () => null;",
+                f"+{added_line}",
+            ]
+        )
+    )
+
+    assert scan_js_004(parsed_diff) == ()
+
+
+def test_js_004_ignores_unsupported_binary_and_deleted_uses() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/preview.py b/src/preview.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/preview.py",
+                "+++ b/src/preview.py",
+                "@@ -1 +1,2 @@",
+                " preview = object()",
+                "+preview.innerHTML = rendered_markup",
+                "diff --git a/src/removed.tsx b/src/removed.tsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/removed.tsx",
+                "+++ b/src/removed.tsx",
+                "@@ -1,2 +1 @@",
+                "-export const HtmlPreview = () => <div "
+                "dangerouslySetInnerHTML={{ __html: markup }} />;",
+                " export const Preview = () => null;",
+            ]
+        )
+    )
+    binary_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/preview.ts",
+                added_lines=(AddedLine("preview.innerHTML = renderedMarkup;", 2),),
+                is_binary=True,
+            ),
+        )
+    )
+
+    assert scan_js_004(parsed_diff) == ()
+    assert scan_js_004(binary_diff) == ()

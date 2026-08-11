@@ -37,12 +37,26 @@ _JS_003 = RuleMetadata(
     message="A direct eval() call was added.",
     suggestion="Avoid eval() and use a safe, explicit alternative.",
 )
+_JS_004 = RuleMetadata(
+    rule_id="JS-004",
+    name="Direct HTML injection",
+    source=FindingSource.LANGUAGE_RULE,
+    severity=Severity.HIGH,
+    category="javascript",
+    scope="added-line",
+    message="A direct HTML injection sink was added.",
+    suggestion="Avoid direct HTML injection or sanitize trusted content first.",
+)
 _SUPPORTED_EXTENSIONS = frozenset({".ts", ".tsx", ".js", ".jsx"})
 _CONSOLE_CALL = re.compile(r"(?<![A-Za-z0-9_$.])console\.(?:log|debug)\s*\(")
 _DEBUGGER_STATEMENT = re.compile(
     r"(?<![A-Za-z0-9_$.])debugger(?![A-Za-z0-9_$])(?=\s*(?:;|}|//|/\*|$))"
 )
 _EVAL_CALL = re.compile(r"(?<![A-Za-z0-9_$.])eval\s*\(")
+_DIRECT_HTML_INJECTION = re.compile(
+    r"(?:\.[ \t]*innerHTML|(?<![A-Za-z0-9_$])dangerouslySetInnerHTML)"
+    r"(?![A-Za-z0-9_$])[ \t]*=(?!=)"
+)
 
 
 def scan_js_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
@@ -164,6 +178,53 @@ def scan_js_003(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
     return tuple(findings)
 
 
+def scan_js_004(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
+    findings: list[FindingDraft] = []
+
+    for parsed_file in parsed_diff.files:
+        if parsed_file.is_binary or not _is_supported_javascript_path(parsed_file.new_path):
+            continue
+
+        if parsed_file.hunks:
+            for parsed_hunk in parsed_file.hunks:
+                scanner = _JavaScriptLineScanner()
+                for hunk_line in parsed_hunk.lines:
+                    if hunk_line.kind == "deleted":
+                        continue
+                    contains_direct_html_injection = scanner.scan(
+                        hunk_line.content,
+                        _DIRECT_HTML_INJECTION,
+                        scanner.is_direct_html_injection,
+                    )
+                    if hunk_line.kind != "added" or not contains_direct_html_injection:
+                        continue
+                    findings.append(
+                        _new_js_004_finding(
+                            parsed_file.new_path,
+                            hunk_line.new_line,
+                            hunk_line.content,
+                        )
+                    )
+            continue
+
+        for added_line in parsed_file.added_lines:
+            scanner = _JavaScriptLineScanner()
+            if scanner.scan(
+                added_line.content,
+                _DIRECT_HTML_INJECTION,
+                scanner.is_direct_html_injection,
+            ):
+                findings.append(
+                    _new_js_004_finding(
+                        parsed_file.new_path,
+                        added_line.new_line,
+                        added_line.content,
+                    )
+                )
+
+    return tuple(findings)
+
+
 def _is_supported_javascript_path(path: str) -> bool:
     return path.casefold().endswith(tuple(_SUPPORTED_EXTENSIONS))
 
@@ -218,6 +279,24 @@ def _new_js_003_finding(
     )
 
 
+def _new_js_004_finding(
+    path: str,
+    new_line: int | None,
+    raw_excerpt: str,
+) -> FindingDraft:
+    return FindingDraft(
+        rule_id=_JS_004.rule_id,
+        rule_version=RULESET_VERSION,
+        source=_JS_004.source,
+        severity=_JS_004.severity,
+        path=path,
+        new_line=new_line,
+        raw_excerpt=raw_excerpt,
+        message=_JS_004.message,
+        suggestion=_JS_004.suggestion,
+    )
+
+
 def _is_direct_eval_call(line: str, match: re.Match[str]) -> bool:
     closing_parenthesis = line.find(")", match.end())
     if (
@@ -242,6 +321,13 @@ class _JavaScriptLineScanner:
         self._mode = "code"
         self._quote: str | None = None
         self._template_expression_depths: list[int] = []
+        self._jsx_open_tag = False
+        self._jsx_attribute_expression_depth = 0
+
+    def is_direct_html_injection(self, _line: str, match: re.Match[str]) -> bool:
+        return match.group().startswith(".") or (
+            self._jsx_open_tag and self._jsx_attribute_expression_depth == 0
+        )
 
     def scan(
         self,
@@ -301,6 +387,28 @@ class _JavaScriptLineScanner:
                 self._mode = "template"
                 index += 1
                 continue
+            if (
+                line[index] == "<"
+                and index + 1 < len(line)
+                and line[index + 1].isalpha()
+                and _starts_jsx_opening_tag(line, index)
+            ):
+                self._jsx_open_tag = True
+                self._jsx_attribute_expression_depth = 0
+            elif line[index] == "{" and self._jsx_open_tag:
+                self._jsx_attribute_expression_depth += 1
+            elif (
+                line[index] == "}"
+                and self._jsx_open_tag
+                and self._jsx_attribute_expression_depth > 0
+            ):
+                self._jsx_attribute_expression_depth -= 1
+            elif (
+                line[index] == ">"
+                and self._jsx_open_tag
+                and self._jsx_attribute_expression_depth == 0
+            ):
+                self._jsx_open_tag = False
             if self._template_expression_depths:
                 if line[index] == "{":
                     self._template_expression_depths[-1] += 1
@@ -318,3 +426,12 @@ class _JavaScriptLineScanner:
             index += 1
 
         return contains_console_call
+
+
+def _starts_jsx_opening_tag(line: str, index: int) -> bool:
+    prefix = line[:index].rstrip()
+    return (
+        not prefix
+        or prefix.endswith(("=", "(", "[", "{", ",", ":", "?", ">"))
+        or bool(re.search(r"\breturn$", prefix))
+    )
