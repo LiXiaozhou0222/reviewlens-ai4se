@@ -1064,3 +1064,63 @@ def test_js_007_ignores_deleted_context_and_binary_explicit_any() -> None:
 
     assert scan_js_007(parsed_diff) == ()
     assert scan_js_007(binary_diff) == ()
+
+
+def test_js_007_ignores_explicit_any_in_jsx_text() -> None:
+    parsed_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/component.tsx",
+                added_lines=(
+                    AddedLine("const view = <div>const fake: any</div>;", 2),
+                ),
+            ),
+        )
+    )
+
+    assert scan_js_007(parsed_diff) == ()
+
+
+@pytest.mark.parametrize(
+    "added_line",
+    [
+        "const render = (options = { mode: any }) => options;",
+        "function render(options = { mode: any }) {}",
+    ],
+)
+def test_js_007_ignores_explicit_any_in_function_object_literals(
+    added_line: str,
+) -> None:
+    parsed_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/types.ts",
+                added_lines=(AddedLine(added_line, 2),),
+            ),
+        )
+    )
+
+    assert scan_js_007(parsed_diff) == ()
+
+
+def test_js_007_finds_explicit_any_declaration_inside_function_body() -> None:
+    parsed_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/types.ts",
+                added_lines=(
+                    AddedLine(
+                        "function parse() { const payload: any = readPayload(); }",
+                        2,
+                    ),
+                ),
+            ),
+        )
+    )
+
+    findings = scan_js_007(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "JS-007"
+    assert findings[0].new_line == 2
+    assert findings[0].raw_excerpt == "function parse() { const payload: any = readPayload(); }"

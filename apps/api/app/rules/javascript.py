@@ -603,7 +603,11 @@ def _is_unhandled_fetch_call(line: str, match: re.Match[str]) -> bool:
 
 
 def _is_narrowed_explicit_any(line: str, match: re.Match[str]) -> bool:
-    if _is_in_regex_literal(line, match.start()):
+    if (
+        _is_in_regex_literal(line, match.start())
+        or _is_in_jsx_text(line, match.start())
+        or _is_in_object_literal(line, match.start())
+    ):
         return False
 
     return any(
@@ -627,6 +631,35 @@ def _is_in_regex_literal(line: str, index: int) -> bool:
         return False
 
     return line.find("/", index + len("any")) != -1
+
+
+def _is_in_jsx_text(line: str, index: int) -> bool:
+    opening_tag_end = line.rfind(">", 0, index)
+    opening_tag_start = line.rfind("<", 0, index)
+    closing_tag_start = line.find("</", index)
+    if opening_tag_end <= opening_tag_start or closing_tag_start == -1:
+        return False
+
+    text_node = line[opening_tag_end + 1 : closing_tag_start]
+    return "{" not in text_node and "}" not in text_node
+
+
+def _is_in_object_literal(line: str, index: int) -> bool:
+    opening_brace = line.rfind("{", 0, index)
+    if opening_brace == -1 or line.find("}", index) == -1:
+        return False
+
+    prefix = line[:opening_brace].rstrip()
+    return not (
+        prefix.endswith("=>")
+        or bool(
+            re.search(
+                r"\bfunction\s+[A-Za-z_$][A-Za-z0-9_$]*\s*\([^)]*\)"
+                r"\s*(?::\s*[^{}]+)?$",
+                prefix,
+            )
+        )
+    )
 
 
 def _fetch_call_end(line: str, opening_parenthesis: int) -> int | None:
