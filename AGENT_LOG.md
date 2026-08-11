@@ -470,3 +470,9 @@
 - **真实 TDD 与审查：** 初始 Python 3.12 RED 为缺少 `scan_js_004`；初始 GREEN 为 JS 44、后端 113 通过。质量审查依次发现 bare `dangerouslySetInnerHTML` binding 误报、多行 JSX 漏报、比较符破坏 JSX 状态、属性表达式内部 binding 误报；每项均先加失败测试，再由 fresh 实现智能体最小修复并 scoped 复审。
 - **最终证据与偏离：** 控制器最终用 `py -3.12` 得到聚焦 `2 passed`、JS `49 passed`、后端 `118 passed`。第四轮实现智能体曾自行以默认 `python` 运行 test-only 检查，违反 Python 3.12 约束；该结果未被采纳，控制器重新以 Python 3.12 记录 RED。最终复审 APPROVED，无 Critical/Important。
 - **提交与范围：** `0d8adb7` 仅实现 JS-004 与合成测试，保留 JS-001–003。没有依赖、网络、真实凭据或用户代码执行。
+
+## 2026-08-11 19:44:19 +08:00 — 阶段：T05.5 完成 / JS-005 空或吞异常 catch
+
+- **真实 TDD：** fresh subagent 先写测试，控制器 Python 3.12 RED 为缺少 `scan_js_005`。GREEN 使用实际测试节点 `test_js_005_anchors_empty_catch_to_added_line` 得到 `1 passed`、JS `55 passed`、后端 `124 passed`；PLAN 预填节点名与实际命名不同，已如实记录。
+- **修复与审查：** spec reviewer 发现一行 fully-added `try...catch {}` 漏报；新增失败测试后 Python 3.12 RED 为 0 findings，最小 inline matcher 修复后单点 `1 passed`、JS `56 passed`、后端 `125 passed`。fresh scoped spec re-review 和 fresh quality review 均 APPROVED，无 Critical/Important。
+- **提交与范围：** `f9cc688` 只增加 JS-005；完整结构必须连续且全为新增行，Finding 锚定新增 catch 行；不扩展解析、依赖、网络或其他 JS 规则。
