@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 31，待执行 P0 为 31，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 32，待执行 P0 为 30，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -56,6 +56,7 @@
 | T05.5 | `f9cc688` |
 | T05.6 | `9cdd99c` |
 | T13.1 | `2bae0ea` |
+| T13.6 | `ae1a358` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
@@ -125,7 +126,6 @@ flowchart LR
 | T12.1 | `app/api/health.py`、`tests/api/test_health.py`；health/ready 不依赖 OpenAI 或数据库。 | `...test_ready_is_available_when_vault_is_locked -q` 先失败后 1 passed。 |
 | T12.3 | `app/api/admin.py`、`tests/api/test_admin_loopback.py`；private loopback Vault routes，Demo 不注册。 | `...test_demo_registers_no_vault_route -q` 先失败后 1 passed。 |
 | T12.5 | `app/observability/logging.py`、`tests/api/test_log_redaction.py`；关联 ID 与脱敏结构化日志。 | `...test_structured_log_excludes_diff_and_secret -q` 先失败后 1 passed。 |
-| T13.6 | M13 spec-compliance review。 | 真实 review 记录；Critical 修复后才允许 M14。 |
 | T14.1 | `apps/web/src/api/client.ts`、`features/input/DiffInputForm.tsx`、对应 Vitest；POST client、粘贴/单文件上传、上限/错误、键盘与防重复提交。 | `npm.cmd run test -- --run tests/DiffInputForm.test.tsx -t "prevents duplicate submit while loading"` 先失败后 1 passed。 |
 | T15.1 | `features/report/ReportSummary.tsx`、`FindingSections.tsx`、`MarkdownExport.ts`、对应测试；结果双分区、文字等级、能力提示与浏览器 Markdown。 | `npm.cmd run test -- --run tests/ReportSummary.test.tsx -t "separates deterministic conclusion from AI advice"` 先失败后 1 passed。 |
 | T16.6 | `features/admin/VaultPage.tsx`、`ModeGate.tsx`、对应测试；private Vault 操作状态且 Demo 不呈现 private controls。 | `npm.cmd run test -- --run tests/ModeGate.test.tsx -t "does not render private controls in demo mode"` 先失败后 1 passed。 |
