@@ -452,3 +452,9 @@
 - **真实修复 RED → GREEN 与调试：** Python 3.12 修复 RED 为 `3 failed, 8 passed in 0.54s`：一个模板插值漏报、两个由新增/上下文行打开的块注释误报。最小实现第一次 GREEN 在导入期触发 `IndentationError`；控制器依 `systematic-debugging` 读取完整堆栈及增量 diff，确认根因是 `_JavaScriptLineScanner.scan` 的 `while` 循环被错误去缩进，而非测试或环境。原 subagent 仅恢复该循环缩进。重新验证：JS 测试 `11 passed in 0.25s`、规则套件 `48 passed in 0.31s`、完整后端 `80 passed in 0.68s`，均为 `py -3.12`；`git diff --check` 无空白错误。
 - **提交与复审：** `918cb8a` (`feat(api): detect JS console output`) 新增受限 JS/TS 扫描、hunk 内有限 lexical state 和 11 个 JS-001 测试。fresh scoped quality re-review 检查初始三个 finding、缩进修复与完整 staged 新文件后 **APPROVED**，无新的 Critical/Important；reviewer 未编辑或重跑测试。所有测试使用合成 Diff、未访问网络或真实 OpenAI，也没有真实凭据。
 - **教训：** 对 Diff 新增行的语言规则可读取 hunk context 来排除注释/字符串，但 Finding 始终必须锚定新增行；词法状态跨行时，编译/导入级错误也必须先按根因调试再恢复语义测试。模板 literal 与 interpolation 的语义不同，必须用独立回归测试约束。
+
+## 2026-08-11 10:42:37 +08:00 — 阶段：T05.2 完成 / JS-002 debugger
+
+- **真实 TDD：** fresh implementation subagent 先只增加 JS-002 测试；控制器从 `apps/api` 用 `py -3.12` 得到预期 RED：`ImportError: cannot import name 'scan_js_002'`。最小实现后，聚焦 `1 passed`、JS 规则文件 `19 passed`、规则套件 `56 passed`、完整后端 `88 passed`。
+- **审查与修复：** fresh spec reviewer APPROVED。fresh quality reviewer 发现 `debugger` 在 `}` 前的 ECMAScript ASI 合法形态漏报；原 subagent 先添加 `if (enabled) { debugger }` 的失败测试，控制器 Python 3.12 RED 显示 `len(findings) == 0`，再仅令 matcher 接受 `}` 终止符。修复后聚焦 `1 passed`、JS 文件 `20 passed`、后端 `89 passed`；fresh scoped quality re-review APPROVED，无 Critical/Important。
+- **提交与范围：** `20a1205` 只增加 JS-002 固定 metadata、扫描与 9 项相关测试，不改变 JS-001、解析、依赖或外部服务；未使用 Python 3.13、网络、真实 OpenAI 或真实凭据。
