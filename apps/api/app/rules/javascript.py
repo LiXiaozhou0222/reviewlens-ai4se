@@ -369,6 +369,7 @@ def scan_js_007(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
                         hunk_line.content,
                         _EXPLICIT_ANY,
                         _is_narrowed_explicit_any,
+                        skip_jsx_text=True,
                     )
                     if hunk_line.kind != "added" or not contains_explicit_any:
                         continue
@@ -386,6 +387,7 @@ def scan_js_007(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
                 added_line.content,
                 _EXPLICIT_ANY,
                 _is_narrowed_explicit_any,
+                skip_jsx_text=True,
             ):
                 findings.append(
                     _new_js_007_finding(
@@ -646,20 +648,14 @@ def _is_in_jsx_text(line: str, index: int) -> bool:
 
 def _is_in_object_literal(line: str, index: int) -> bool:
     opening_brace = line.rfind("{", 0, index)
-    if opening_brace == -1 or line.find("}", index) == -1:
+    if opening_brace == -1:
         return False
 
-    prefix = line[:opening_brace].rstrip()
-    return not (
-        prefix.endswith("=>")
-        or bool(
-            re.search(
-                r"\bfunction\s+[A-Za-z_$][A-Za-z0-9_$]*\s*\([^)]*\)"
-                r"\s*(?::\s*[^{}]+)?$",
-                prefix,
-            )
-        )
-    )
+    closing_brace = line.find("}", opening_brace + 1)
+    if closing_brace == -1 or not opening_brace < index < closing_brace:
+        return False
+
+    return line[:opening_brace].rstrip().endswith("=")
 
 
 def _fetch_call_end(line: str, opening_parenthesis: int) -> int | None:
@@ -716,6 +712,8 @@ class _JavaScriptLineScanner:
         self._template_expression_depths: list[int] = []
         self._jsx_open_tag = False
         self._jsx_attribute_expression_depth = 0
+        self._jsx_text_depth = 0
+        self._jsx_text_expression_depth = 0
 
     def is_direct_html_injection(self, _line: str, match: re.Match[str]) -> bool:
         return match.group().startswith(".") or (
@@ -727,6 +725,7 @@ class _JavaScriptLineScanner:
         line: str,
         pattern: re.Pattern[str] = _CONSOLE_CALL,
         match_filter: Callable[[str, re.Match[str]], bool] | None = None,
+        skip_jsx_text: bool = False,
     ) -> bool:
         index = 0
         contains_console_call = False
@@ -765,6 +764,43 @@ class _JavaScriptLineScanner:
                     index += 1
                 continue
 
+            if (
+                skip_jsx_text
+                and self._jsx_text_depth
+                and not self._jsx_text_expression_depth
+            ):
+                if line.startswith("</", index):
+                    closing_tag_end = line.find(">", index + 2)
+                    if closing_tag_end != -1:
+                        self._jsx_text_depth -= 1
+                        index = closing_tag_end + 1
+                        continue
+                if line[index] == "{":
+                    self._jsx_text_expression_depth = 1
+                elif (
+                    line[index] == "<"
+                    and index + 1 < len(line)
+                    and line[index + 1].isalpha()
+                ):
+                    opening_tag_end = line.find(">", index + 1)
+                    if opening_tag_end != -1:
+                        if not line[:opening_tag_end].rstrip().endswith("/"):
+                            self._jsx_text_depth += 1
+                        index = opening_tag_end + 1
+                        continue
+                index += 1
+                continue
+
+            if skip_jsx_text and self._jsx_text_expression_depth:
+                if line[index] == "{":
+                    self._jsx_text_expression_depth += 1
+                    index += 1
+                    continue
+                if line[index] == "}":
+                    self._jsx_text_expression_depth -= 1
+                    index += 1
+                    continue
+
             if line.startswith("//", index):
                 break
             if line.startswith("/*", index):
@@ -802,6 +838,8 @@ class _JavaScriptLineScanner:
                 and self._jsx_attribute_expression_depth == 0
             ):
                 self._jsx_open_tag = False
+                if skip_jsx_text and not line[:index].rstrip().endswith("/"):
+                    self._jsx_text_depth += 1
             if self._template_expression_depths:
                 if line[index] == "{":
                     self._template_expression_depths[-1] += 1

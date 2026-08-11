@@ -1124,3 +1124,68 @@ def test_js_007_finds_explicit_any_declaration_inside_function_body() -> None:
     assert findings[0].rule_id == "JS-007"
     assert findings[0].new_line == 2
     assert findings[0].raw_excerpt == "function parse() { const payload: any = readPayload(); }"
+
+
+@pytest.mark.parametrize(
+    "added_line",
+    [
+        "if (ready) { const payload: any = readPayload(); }",
+        "function parse<T>() { const payload: any = readPayload(); }",
+    ],
+)
+def test_js_007_finds_explicit_any_declaration_inside_ordinary_blocks(
+    added_line: str,
+) -> None:
+    parsed_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/types.ts",
+                added_lines=(AddedLine(added_line, 2),),
+            ),
+        )
+    )
+
+    findings = scan_js_007(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "JS-007"
+    assert findings[0].new_line == 2
+    assert findings[0].raw_excerpt == added_line
+
+
+def test_js_007_finds_parameter_after_default_object_literal() -> None:
+    added_line = "function render(options = { mode: any }, value: any) {}"
+    parsed_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/types.ts",
+                added_lines=(AddedLine(added_line, 2),),
+            ),
+        )
+    )
+
+    findings = scan_js_007(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "JS-007"
+    assert findings[0].new_line == 2
+    assert findings[0].raw_excerpt == added_line
+
+
+def test_js_007_ignores_multiline_jsx_text_that_resembles_a_declaration() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/component.tsx b/src/component.tsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/component.tsx",
+                "+++ b/src/component.tsx",
+                "@@ -1 +1,3 @@",
+                "+const view = <div>",
+                "+const fake: any",
+                "+</div>;",
+            ]
+        )
+    )
+
+    assert scan_js_007(parsed_diff) == ()
