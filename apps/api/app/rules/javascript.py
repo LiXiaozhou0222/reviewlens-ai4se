@@ -67,7 +67,18 @@ _JS_006 = RuleMetadata(
     message="A fetch() call was added without awaiting, returning, or handling it.",
     suggestion="Await, return, or explicitly handle the fetch() promise.",
 )
+_JS_007 = RuleMetadata(
+    rule_id="JS-007",
+    name="Explicit any type",
+    source=FindingSource.LANGUAGE_RULE,
+    severity=Severity.LOW,
+    category="javascript",
+    scope="added-line",
+    message="An explicit any type was added.",
+    suggestion="Use a specific type instead of any.",
+)
 _SUPPORTED_EXTENSIONS = frozenset({".ts", ".tsx", ".js", ".jsx"})
+_SUPPORTED_TYPESCRIPT_EXTENSIONS = frozenset({".ts", ".tsx"})
 _CONSOLE_CALL = re.compile(r"(?<![A-Za-z0-9_$.])console\.(?:log|debug)\s*\(")
 _DEBUGGER_STATEMENT = re.compile(
     r"(?<![A-Za-z0-9_$.])debugger(?![A-Za-z0-9_$])(?=\s*(?:;|}|//|/\*|$))"
@@ -84,6 +95,33 @@ _ONE_LINE_EMPTY_CATCH = re.compile(
 )
 _SWALLOWED_RETURN = re.compile(r"return(?:\s+(?:undefined|null))?\s*;")
 _FETCH_CALL = re.compile(r"(?<![A-Za-z0-9_$.])fetch\s*\(")
+_EXPLICIT_ANY = re.compile(r"\bany\b")
+_EXPLICIT_ANY_FORMS = (
+    re.compile(
+        r"\b(?:const|let|var)\s+[A-Za-z_$][A-Za-z0-9_$]*\s*:\s*(?P<any>any)\b"
+    ),
+    re.compile(
+        r"\bfunction\s+[A-Za-z_$][A-Za-z0-9_$]*\s*\([^)]*"
+        r"\b[A-Za-z_$][A-Za-z0-9_$]*\s*:\s*(?P<any>any)\b"
+    ),
+    re.compile(
+        r"\bfunction\s+[A-Za-z_$][A-Za-z0-9_$]*\s*\([^)]*\)\s*:\s*"
+        r"(?P<any>any)\b"
+    ),
+    re.compile(
+        r"\([^)]*\b[A-Za-z_$][A-Za-z0-9_$]*\s*:\s*(?P<any>any)\b[^)]*\)"
+        r"\s*(?::\s*any\b)?\s*=>"
+    ),
+    re.compile(r"\([^)]*\)\s*:\s*(?P<any>any)\b\s*=>"),
+    re.compile(
+        r"\b[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\s*"
+        r"\([^()]*\)\s+as\s+(?P<any>any)\b\s*;?\s*(?://.*)?$"
+    ),
+    re.compile(
+        r"\b[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\s*"
+        r"\[[^\[\]]+\]\s+as\s+(?P<any>any)\b\s*;?\s*(?://.*)?$"
+    ),
+)
 
 
 def scan_js_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
@@ -311,6 +349,55 @@ def scan_js_006(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
     return tuple(findings)
 
 
+def scan_js_007(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
+    findings: list[FindingDraft] = []
+
+    for parsed_file in parsed_diff.files:
+        if (
+            parsed_file.is_binary
+            or not _is_supported_typescript_path(parsed_file.new_path)
+        ):
+            continue
+
+        if parsed_file.hunks:
+            for parsed_hunk in parsed_file.hunks:
+                scanner = _JavaScriptLineScanner()
+                for hunk_line in parsed_hunk.lines:
+                    if hunk_line.kind == "deleted":
+                        continue
+                    contains_explicit_any = scanner.scan(
+                        hunk_line.content,
+                        _EXPLICIT_ANY,
+                        _is_narrowed_explicit_any,
+                    )
+                    if hunk_line.kind != "added" or not contains_explicit_any:
+                        continue
+                    findings.append(
+                        _new_js_007_finding(
+                            parsed_file.new_path,
+                            hunk_line.new_line,
+                            hunk_line.content,
+                        )
+                    )
+            continue
+
+        for added_line in parsed_file.added_lines:
+            if _JavaScriptLineScanner().scan(
+                added_line.content,
+                _EXPLICIT_ANY,
+                _is_narrowed_explicit_any,
+            ):
+                findings.append(
+                    _new_js_007_finding(
+                        parsed_file.new_path,
+                        added_line.new_line,
+                        added_line.content,
+                    )
+                )
+
+    return tuple(findings)
+
+
 def _scan_fully_added_swallowed_catches(
     path: str,
     hunk_lines: tuple[HunkLine, ...],
@@ -375,6 +462,10 @@ def _is_empty_or_swallowed_catch(body: list[HunkLine]) -> bool:
 
 def _is_supported_javascript_path(path: str) -> bool:
     return path.casefold().endswith(tuple(_SUPPORTED_EXTENSIONS))
+
+
+def _is_supported_typescript_path(path: str) -> bool:
+    return path.casefold().endswith(tuple(_SUPPORTED_TYPESCRIPT_EXTENSIONS))
 
 
 def _new_finding(path: str, new_line: int | None, raw_excerpt: str) -> FindingDraft:
@@ -481,6 +572,24 @@ def _new_js_006_finding(
     )
 
 
+def _new_js_007_finding(
+    path: str,
+    new_line: int | None,
+    raw_excerpt: str,
+) -> FindingDraft:
+    return FindingDraft(
+        rule_id=_JS_007.rule_id,
+        rule_version=RULESET_VERSION,
+        source=_JS_007.source,
+        severity=_JS_007.severity,
+        path=path,
+        new_line=new_line,
+        raw_excerpt=raw_excerpt,
+        message=_JS_007.message,
+        suggestion=_JS_007.suggestion,
+    )
+
+
 def _is_unhandled_fetch_call(line: str, match: re.Match[str]) -> bool:
     if line[: match.start()].strip():
         return False
@@ -491,6 +600,33 @@ def _is_unhandled_fetch_call(line: str, match: re.Match[str]) -> bool:
 
     suffix = line[call_end + 1 :].strip()
     return suffix in {"", ";"} or suffix.startswith("; //")
+
+
+def _is_narrowed_explicit_any(line: str, match: re.Match[str]) -> bool:
+    if _is_in_regex_literal(line, match.start()):
+        return False
+
+    return any(
+        form_match.start("any") == match.start()
+        for explicit_any_form in _EXPLICIT_ANY_FORMS
+        for form_match in explicit_any_form.finditer(line)
+    )
+
+
+def _is_in_regex_literal(line: str, index: int) -> bool:
+    opening_slash = line.rfind("/", 0, index)
+    if (
+        opening_slash == -1
+        or line.startswith("//", opening_slash)
+        or line.startswith("/*", opening_slash)
+    ):
+        return False
+
+    prefix = line[:opening_slash].rstrip()
+    if prefix and prefix[-1] not in "=(:,[!&|?{;":
+        return False
+
+    return line.find("/", index + len("any")) != -1
 
 
 def _fetch_call_end(line: str, opening_parenthesis: int) -> int | None:
