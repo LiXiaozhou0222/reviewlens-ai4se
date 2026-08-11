@@ -464,3 +464,9 @@
 - **真实 TDD：** fresh subagent 先写 JS-003 测试；Python 3.12 RED 为缺少 `scan_js_003`。PLAN 的预填节点名与实际测试函数不一致，控制器按真实函数 `test_js_003_finds_added_eval` 运行 GREEN，得到 `1 passed`、JS 文件 `30 passed`、后端 `99 passed`。
 - **审查与修复：** spec review 发现方法声明和 JSX 文本误报；回归 RED 为 3 个失败，修复后 JS `33 passed`、后端 `102 passed`。质量 reviewer 随后担心控制流 `if (eval(input)) {}` 被误排除；控制器用新增测试实证其已通过，并确认过滤只读取 eval 自身右括号后的字符。fresh scoped re-review 最终批准，并确认此前唯一的暂存覆盖问题已修复。
 - **提交与边界：** `99657fd` 只实现 JS-003 和合成测试；没有依赖、网络、用户代码执行或真实凭据。Finding 仅锚定新增行，保守排除方法/JSX lookalike，保留直接调用和模板插值调用。
+
+## 2026-08-11 18:18:08 +08:00 — 阶段：T05.4 完成 / JS-004 HTML 注入接口
+
+- **真实 TDD 与审查：** 初始 Python 3.12 RED 为缺少 `scan_js_004`；初始 GREEN 为 JS 44、后端 113 通过。质量审查依次发现 bare `dangerouslySetInnerHTML` binding 误报、多行 JSX 漏报、比较符破坏 JSX 状态、属性表达式内部 binding 误报；每项均先加失败测试，再由 fresh 实现智能体最小修复并 scoped 复审。
+- **最终证据与偏离：** 控制器最终用 `py -3.12` 得到聚焦 `2 passed`、JS `49 passed`、后端 `118 passed`。第四轮实现智能体曾自行以默认 `python` 运行 test-only 检查，违反 Python 3.12 约束；该结果未被采纳，控制器重新以 Python 3.12 记录 RED。最终复审 APPROVED，无 Critical/Important。
+- **提交与范围：** `0d8adb7` 仅实现 JS-004 与合成测试，保留 JS-001–003。没有依赖、网络、真实凭据或用户代码执行。
