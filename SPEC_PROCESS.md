@@ -1,5 +1,19 @@
 # ReviewLens 规约生成过程
 
+## 2026-08-12：72-hour Release Scope Revision（已获用户批准）
+
+用户批准停止进一步 triage，并授权将 109 个有效任务压缩为 62 个正式 v1 任务：30 个真实完成、32 个待执行 P0、0 个 P1。该决定不是对任何未来测试、CI、镜像、部署或 Reflection 的完成声明。
+
+- **移除：** 报告数据库、SQLite/SQLAlchemy/Alembic、Repository、历史、AI retry、服务端导出、筛选 UI、Compose、独立 `:8081` admin listener、应用内限流和重复 fresh-start smoke；JS-007 继续保持取消。
+- **保留：** 当前请求 `ReportView`、浏览器 Markdown、FindingRedactor、Vault 加密文件、单次 Mock/OpenAI、单一 OCI image、双 CI、公开无状态 Mock Demo、真实 release gate。
+- **Private 边界：** private 整个 app 绑定回环；Vault routes 只在 private 注册。Demo 不注册 private/Vault routes，不持久化任何访客审查数据。
+- **部署边界：** 公网部署改为 platform-neutral；HTTPS Demo、Mock、无状态和 private routes 不可达是验收，Nginx、DNS、Compose 与 HTTP 429 不再是产品合同。
+- **时间表述修订：** realistic aggregate effort 约 63 小时，不能等价为串行 wall-clock 或“剩余 9 小时 buffer”；最多三条合法 lane 并行，最终锁定 8–10 小时给 Reflection、最终 CI、部署复核、secret scan、clean tree 与提交。
+- **依赖修订：** T10.1 同时依赖 T05.8–T05.10 和 M06；T10.3 依赖 M06 和 M09。该规定防止任何正式 ReportView 绕过脱敏。
+- **一致性要求：** scope revision 同步删除 DB-only 数据模型、迁移、持久化/历史 API、AIReviewAttempt、cascade/unique 约束、技术栈与 README 声明；Vault 文件持久化不受影响。SPEC 保留 7 个真实 INVEST 用户故事，不用已删除能力凑数。
+
+文档修订完成后应进行一次快速一致性审查；除新的架构冲突、repair cap、已批准范围变更、不可避免的共享合同冲突或外部授权需求外，直接按新版 PLAN 三条 lane 执行。
+
 ### 移除后的真实验证
 
 JS-007 撤除提交为 `91fd7fa`。控制器确认活跃 API 代码与测试中不再包含

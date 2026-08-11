@@ -1,5 +1,13 @@
 # AGENT_LOG
 
+## 2026-08-12 01:54:39 +08:00 — 72-hour Release Scope Revision
+
+- **Task / phase:** 用户批准的发布范围修订；未启动 T05.8 或任何实现子任务。
+- **Skills / context:** `writing-plans` 用于收敛已批准的新任务合同；后续执行固定使用 `using-git-worktrees`、`subagent-driven-development`、TDD 和双阶段 review。人工审核指出 69-task 方案的 63h 是 aggregate effort 而非 wall-clock buffer，且 T10.A 缺少 M06 脱敏依赖。
+- **Human decisions:** 从 109 个有效任务收敛至 62：30 已完成、32 P0、0 P1。删除报告持久化/history/retry/server export/filter/Compose/独立 admin listener/应用内 rate limiting；private 改为单一 loopback app，public Demo 改为 platform-neutral。保留 Vault 加密文件、单次 AI、Mock、Docker OCI、双 CI、公开 Demo 与最终 release gate。
+- **Process evidence:** 本轮仅修改允许的规约、计划、过程和 README 文档；未创建或修改业务代码、测试、Docker、CI、数据库或部署资产，未伪造任何 RED/GREEN、review、commit、CI、Registry 或 URL 证据。
+- **Lesson:** 删除技术栈时必须同步删除依赖、数据模型、API、验收、依赖图和文档承诺；单纯减少 task 数而保留死技术会制造新的实现歧义。
+
 ## 2026-08-12 01:10:00 +08:00 — JS-007 removal verification and pause
 
 - **Verification:** After mechanical removal, the controller confirmed that
