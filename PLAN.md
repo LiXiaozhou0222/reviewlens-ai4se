@@ -214,7 +214,7 @@ flowchart LR
 
 | Task | 文件与最小目标 | RED / 预期 | GREEN / 预期 |
 | --- | --- | --- | --- |
-| T05.1 | `rules/javascript.py`、`tests/rules/test_javascript_rules.py`：仅 JS-001 `console.log`/`console.debug`。 | `cd apps/api; pytest tests/rules/test_javascript_rules.py::test_js_001_finds_added_console_log -q`；未命中。 | 同一命令；`1 passed`。 |
+| T05.1 | `rules/javascript.py`、`tests/rules/test_javascript_rules.py`：仅 JS-001 `console.log`/`console.debug`。<br>**真实完成提交：** `918cb8a` (`feat(api): detect JS console output`)；2026-08-11 经规约符合性审查批准、代码质量审查修复后 scoped 复审批准。 | `cd apps/api; py -3.12 -m pytest tests/rules/test_javascript_rules.py::test_js_001_finds_added_console_log -q`；初始 RED：`ModuleNotFoundError: No module named 'app.rules.javascript'`。质量修复 RED：`3 failed, 8 passed`，覆盖模板插值漏报及跨行块注释误报。 | 初始聚焦：`1 passed`；修复后 JS 测试：`11 passed`；规则套件：`48 passed`；完整后端：`80 passed`，均为 Python 3.12。 |
 | T05.2 | 同上：仅 JS-002 `debugger`。 | `cd apps/api; pytest tests/rules/test_javascript_rules.py::test_js_002_finds_added_debugger -q`；未命中。 | 同一命令；`1 passed`。 |
 | T05.3 | 同上：仅 JS-003 `eval()`。 | `cd apps/api; pytest tests/rules/test_javascript_rules.py::test_js_003_finds_added_eval -q`；未命中。 | 同一命令；`1 passed`。 |
 | T05.4 | 同上：仅 JS-004 `innerHTML`/`dangerouslySetInnerHTML`。 | `cd apps/api; pytest tests/rules/test_javascript_rules.py::test_js_004_finds_added_inner_html -q`；未命中。 | 同一命令；`1 passed`。 |
