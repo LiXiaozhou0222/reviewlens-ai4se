@@ -1,4 +1,5 @@
 import re
+from collections.abc import Callable
 
 from app.diff_parser.parser import ParsedDiff
 from app.models.api import FindingDraft
@@ -26,11 +27,22 @@ _JS_002 = RuleMetadata(
     message="A debugger statement was added.",
     suggestion="Remove the debugger statement before merging.",
 )
+_JS_003 = RuleMetadata(
+    rule_id="JS-003",
+    name="Dynamic evaluation",
+    source=FindingSource.LANGUAGE_RULE,
+    severity=Severity.HIGH,
+    category="javascript",
+    scope="added-line",
+    message="A direct eval() call was added.",
+    suggestion="Avoid eval() and use a safe, explicit alternative.",
+)
 _SUPPORTED_EXTENSIONS = frozenset({".ts", ".tsx", ".js", ".jsx"})
 _CONSOLE_CALL = re.compile(r"(?<![A-Za-z0-9_$.])console\.(?:log|debug)\s*\(")
 _DEBUGGER_STATEMENT = re.compile(
     r"(?<![A-Za-z0-9_$.])debugger(?![A-Za-z0-9_$])(?=\s*(?:;|}|//|/\*|$))"
 )
+_EVAL_CALL = re.compile(r"(?<![A-Za-z0-9_$.])eval\s*\(")
 
 
 def scan_js_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
@@ -106,6 +118,52 @@ def scan_js_002(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
     return tuple(findings)
 
 
+def scan_js_003(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
+    findings: list[FindingDraft] = []
+
+    for parsed_file in parsed_diff.files:
+        if parsed_file.is_binary or not _is_supported_javascript_path(parsed_file.new_path):
+            continue
+
+        if parsed_file.hunks:
+            for parsed_hunk in parsed_file.hunks:
+                scanner = _JavaScriptLineScanner()
+                for hunk_line in parsed_hunk.lines:
+                    if hunk_line.kind == "deleted":
+                        continue
+                    contains_eval_call = scanner.scan(
+                        hunk_line.content,
+                        _EVAL_CALL,
+                        _is_direct_eval_call,
+                    )
+                    if hunk_line.kind != "added" or not contains_eval_call:
+                        continue
+                    findings.append(
+                        _new_js_003_finding(
+                            parsed_file.new_path,
+                            hunk_line.new_line,
+                            hunk_line.content,
+                        )
+                    )
+            continue
+
+        for added_line in parsed_file.added_lines:
+            if _JavaScriptLineScanner().scan(
+                added_line.content,
+                _EVAL_CALL,
+                _is_direct_eval_call,
+            ):
+                findings.append(
+                    _new_js_003_finding(
+                        parsed_file.new_path,
+                        added_line.new_line,
+                        added_line.content,
+                    )
+                )
+
+    return tuple(findings)
+
+
 def _is_supported_javascript_path(path: str) -> bool:
     return path.casefold().endswith(tuple(_SUPPORTED_EXTENSIONS))
 
@@ -142,13 +200,55 @@ def _new_js_002_finding(
     )
 
 
+def _new_js_003_finding(
+    path: str,
+    new_line: int | None,
+    raw_excerpt: str,
+) -> FindingDraft:
+    return FindingDraft(
+        rule_id=_JS_003.rule_id,
+        rule_version=RULESET_VERSION,
+        source=_JS_003.source,
+        severity=_JS_003.severity,
+        path=path,
+        new_line=new_line,
+        raw_excerpt=raw_excerpt,
+        message=_JS_003.message,
+        suggestion=_JS_003.suggestion,
+    )
+
+
+def _is_direct_eval_call(line: str, match: re.Match[str]) -> bool:
+    closing_parenthesis = line.find(")", match.end())
+    if (
+        closing_parenthesis != -1
+        and line[closing_parenthesis + 1 :].lstrip().startswith("{")
+    ):
+        return False
+
+    opening_tag_end = line.rfind(">", 0, match.start())
+    opening_tag_start = line.rfind("<", 0, match.start())
+    closing_tag_start = line.find("</", match.start())
+    if opening_tag_end > opening_tag_start and closing_tag_start != -1:
+        text_node = line[opening_tag_end + 1 : closing_tag_start]
+        if "{" not in text_node and "}" not in text_node:
+            return False
+
+    return True
+
+
 class _JavaScriptLineScanner:
     def __init__(self) -> None:
         self._mode = "code"
         self._quote: str | None = None
         self._template_expression_depths: list[int] = []
 
-    def scan(self, line: str, pattern: re.Pattern[str] = _CONSOLE_CALL) -> bool:
+    def scan(
+        self,
+        line: str,
+        pattern: re.Pattern[str] = _CONSOLE_CALL,
+        match_filter: Callable[[str, re.Match[str]], bool] | None = None,
+    ) -> bool:
         index = 0
         contains_console_call = False
 
@@ -212,7 +312,8 @@ class _JavaScriptLineScanner:
                     index += 1
                     continue
 
-            if pattern.match(line, index) is not None:
+            match = pattern.match(line, index)
+            if match is not None and (match_filter is None or match_filter(line, match)):
                 contains_console_call = True
             index += 1
 

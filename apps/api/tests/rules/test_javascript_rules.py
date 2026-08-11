@@ -2,7 +2,7 @@ import pytest
 
 from app.diff_parser.parser import AddedLine, ParsedDiff, ParsedFile, parse_unified_diff
 from app.models.domain import FindingSource, Severity
-from app.rules.javascript import scan_js_001, scan_js_002
+from app.rules.javascript import scan_js_001, scan_js_002, scan_js_003
 
 
 def test_js_001_finds_added_console_log() -> None:
@@ -285,3 +285,194 @@ def test_js_002_ignores_comments_strings_and_lookalikes(added_line: str) -> None
     )
 
     assert scan_js_002(parsed_diff) == ()
+
+
+def test_js_003_finds_added_eval() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/legacy.ts b/src/legacy.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/legacy.ts",
+                "+++ b/src/legacy.ts",
+                "@@ -7,2 +7,3 @@",
+                " export const enabled = true;",
+                '+const result = eval("legacyExpression");',
+                " export const level = 'info';",
+            ]
+        )
+    )
+
+    findings = scan_js_003(parsed_diff)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.rule_id == "JS-003"
+    assert finding.rule_version == "1.0.0"
+    assert finding.source is FindingSource.LANGUAGE_RULE
+    assert finding.severity is Severity.HIGH
+    assert finding.path == "src/legacy.ts"
+    assert finding.new_line == 8
+    assert finding.raw_excerpt == 'const result = eval("legacyExpression");'
+    assert finding.message
+    assert finding.suggestion
+
+
+def test_js_003_finds_eval_inside_template_interpolation() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/legacy.jsx b/src/legacy.jsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/legacy.jsx",
+                "+++ b/src/legacy.jsx",
+                "@@ -1 +1,2 @@",
+                " export const title = 'ready';",
+                '+const title = `${eval("legacyExpression")}`;',
+            ]
+        )
+    )
+
+    findings = scan_js_003(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "JS-003"
+    assert findings[0].new_line == 2
+    assert findings[0].raw_excerpt == 'const title = `${eval("legacyExpression")}`;'
+
+
+def test_js_003_finds_eval_used_as_a_control_flow_condition() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/legacy.ts b/src/legacy.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/legacy.ts",
+                "+++ b/src/legacy.ts",
+                "@@ -1 +1,2 @@",
+                " export const enabled = true;",
+                "+if (eval(input)) { runLegacyPath(); }",
+            ]
+        )
+    )
+
+    findings = scan_js_003(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].rule_id == "JS-003"
+    assert findings[0].new_line == 2
+    assert findings[0].raw_excerpt == "if (eval(input)) { runLegacyPath(); }"
+
+
+def test_js_003_ignores_eval_inside_block_comment_started_by_hunk_context() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/legacy.tsx b/src/legacy.tsx",
+                "index 1234567..89abcde 100644",
+                "--- a/src/legacy.tsx",
+                "+++ b/src/legacy.tsx",
+                "@@ -1,2 +1,3 @@",
+                " /* dynamic evaluation is prohibited",
+                '+const result = eval("legacyExpression");',
+                " */",
+            ]
+        )
+    )
+
+    assert scan_js_003(parsed_diff) == ()
+
+
+@pytest.mark.parametrize(
+    "added_line",
+    [
+        "// eval('legacyExpression')",
+        "const snippet = 'eval(\"legacyExpression\")';",
+        'const snippet = `eval("legacyExpression")`;',
+        "const evaluate = (value: string) => value;",
+        "legacy.eval('legacyExpression');",
+        "window.eval('legacyExpression');",
+    ],
+)
+def test_js_003_ignores_comments_strings_and_lookalikes(added_line: str) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/legacy.js b/src/legacy.js",
+                "index 1234567..89abcde 100644",
+                "--- a/src/legacy.js",
+                "+++ b/src/legacy.js",
+                "@@ -1 +1,2 @@",
+                " export const enabled = true;",
+                f"+{added_line}",
+            ]
+        )
+    )
+
+    assert scan_js_003(parsed_diff) == ()
+
+
+@pytest.mark.parametrize(
+    ("path", "added_line"),
+    [
+        ("src/parser.ts", "class Parser { eval() {} }"),
+        ("src/parser.js", "const parser = { eval() {} };"),
+        ("src/preview.tsx", "export const Preview = () => <div>eval()</div>;"),
+    ],
+)
+def test_js_003_ignores_method_declarations_and_jsx_text(
+    path: str,
+    added_line: str,
+) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                f"diff --git a/{path} b/{path}",
+                "index 1234567..89abcde 100644",
+                f"--- a/{path}",
+                f"+++ b/{path}",
+                "@@ -1 +1,2 @@",
+                " export const enabled = true;",
+                f"+{added_line}",
+            ]
+        )
+    )
+
+    assert scan_js_003(parsed_diff) == ()
+
+
+def test_js_003_ignores_unsupported_binary_and_deleted_eval_calls() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/legacy.py b/src/legacy.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/legacy.py",
+                "+++ b/src/legacy.py",
+                "@@ -1 +1,2 @@",
+                " enabled = True",
+                '+result = eval("legacy_expression")',
+                "diff --git a/src/removed.ts b/src/removed.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/removed.ts",
+                "+++ b/src/removed.ts",
+                "@@ -1,2 +1 @@",
+                '-const result = eval("legacyExpression");',
+                " export const enabled = true;",
+            ]
+        )
+    )
+    binary_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/legacy.ts",
+                added_lines=(
+                    AddedLine('const result = eval("legacyExpression");', 2),
+                ),
+                is_binary=True,
+            ),
+        )
+    )
+
+    assert scan_js_003(parsed_diff) == ()
+    assert scan_js_003(binary_diff) == ()
