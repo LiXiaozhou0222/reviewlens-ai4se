@@ -576,3 +576,8 @@
 - **TDD:** Fresh implementation subagent produced a real Python 3.12.10 RED (`ModuleNotFoundError: app.reviews`) and a minimal fixed-excerpt GREEN; initial evidence was focused 1 / backend 150 passed.
 - **Critical repair:** Fresh spec review found that input-controlled `message` and `suggestion` were still copied into public output. A fresh RED injected the same fake credential, tail, and `API_KEY` into all text fields and proved serialized leakage. Repair replaced excerpt, message, and suggestion with fixed built-in safe text. Final focused 1 / backend 150 passed.
 - **Review / commit:** Fresh spec re-review and final quality/security review APPROVED with no Critical/Important. `c7e60fa` fails closed outside GEN-001, never copies `raw_excerpt` or `match_start`, and preserves only safe rule/location metadata plus fixed redaction metadata. No real credential, provider, network, or Python 3.13 was used.
+## 2026-08-12 04:50:00 +08:00 — T06.2 completed / strict public SanitizedFinding schema
+
+- **TDD:** Fresh subagent added the exact raw-field rejection test. Python 3.12.10 RED was `ModuleNotFoundError: app.reviews.schemas`; minimal GREEN added only an explicit re-export of the single canonical strict Pydantic `SanitizedFinding`. Evidence: schema 1, reviews 2, backend 151 passed.
+- **Boundary:** The canonical model remains defined once in `app.models.api` with `extra="forbid"`; `raw_excerpt`, `match_start`, and `raw_secret` are absent and rejected. T06.2 did not implement Provider payloads or T06.3 behavior.
+- **Review / commit:** Fresh spec and quality/security reviews APPROVED with no Critical/Important. `e5ce79d` contains only the public schema boundary and synthetic regression test.
