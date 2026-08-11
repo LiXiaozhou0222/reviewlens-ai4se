@@ -16,8 +16,21 @@ _JS_001 = RuleMetadata(
     message="A console.log or console.debug call was added.",
     suggestion="Remove the console output or replace it with approved logging.",
 )
+_JS_002 = RuleMetadata(
+    rule_id="JS-002",
+    name="Debugger statement",
+    source=FindingSource.LANGUAGE_RULE,
+    severity=Severity.LOW,
+    category="javascript",
+    scope="added-line",
+    message="A debugger statement was added.",
+    suggestion="Remove the debugger statement before merging.",
+)
 _SUPPORTED_EXTENSIONS = frozenset({".ts", ".tsx", ".js", ".jsx"})
 _CONSOLE_CALL = re.compile(r"(?<![A-Za-z0-9_$.])console\.(?:log|debug)\s*\(")
+_DEBUGGER_STATEMENT = re.compile(
+    r"(?<![A-Za-z0-9_$.])debugger(?![A-Za-z0-9_$])(?=\s*(?:;|}|//|/\*|$))"
+)
 
 
 def scan_js_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
@@ -52,6 +65,47 @@ def scan_js_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
     return tuple(findings)
 
 
+def scan_js_002(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
+    findings: list[FindingDraft] = []
+
+    for parsed_file in parsed_diff.files:
+        if parsed_file.is_binary or not _is_supported_javascript_path(parsed_file.new_path):
+            continue
+
+        if parsed_file.hunks:
+            for parsed_hunk in parsed_file.hunks:
+                scanner = _JavaScriptLineScanner()
+                for hunk_line in parsed_hunk.lines:
+                    if hunk_line.kind == "deleted":
+                        continue
+                    contains_debugger_statement = scanner.scan(
+                        hunk_line.content,
+                        _DEBUGGER_STATEMENT,
+                    )
+                    if hunk_line.kind != "added" or not contains_debugger_statement:
+                        continue
+                    findings.append(
+                        _new_js_002_finding(
+                            parsed_file.new_path,
+                            hunk_line.new_line,
+                            hunk_line.content,
+                        )
+                    )
+            continue
+
+        for added_line in parsed_file.added_lines:
+            if _JavaScriptLineScanner().scan(added_line.content, _DEBUGGER_STATEMENT):
+                findings.append(
+                    _new_js_002_finding(
+                        parsed_file.new_path,
+                        added_line.new_line,
+                        added_line.content,
+                    )
+                )
+
+    return tuple(findings)
+
+
 def _is_supported_javascript_path(path: str) -> bool:
     return path.casefold().endswith(tuple(_SUPPORTED_EXTENSIONS))
 
@@ -70,13 +124,31 @@ def _new_finding(path: str, new_line: int | None, raw_excerpt: str) -> FindingDr
     )
 
 
+def _new_js_002_finding(
+    path: str,
+    new_line: int | None,
+    raw_excerpt: str,
+) -> FindingDraft:
+    return FindingDraft(
+        rule_id=_JS_002.rule_id,
+        rule_version=RULESET_VERSION,
+        source=_JS_002.source,
+        severity=_JS_002.severity,
+        path=path,
+        new_line=new_line,
+        raw_excerpt=raw_excerpt,
+        message=_JS_002.message,
+        suggestion=_JS_002.suggestion,
+    )
+
+
 class _JavaScriptLineScanner:
     def __init__(self) -> None:
         self._mode = "code"
         self._quote: str | None = None
         self._template_expression_depths: list[int] = []
 
-    def scan(self, line: str) -> bool:
+    def scan(self, line: str, pattern: re.Pattern[str] = _CONSOLE_CALL) -> bool:
         index = 0
         contains_console_call = False
 
@@ -140,7 +212,7 @@ class _JavaScriptLineScanner:
                     index += 1
                     continue
 
-            if _CONSOLE_CALL.match(line, index) is not None:
+            if pattern.match(line, index) is not None:
                 contains_console_call = True
             index += 1
 
