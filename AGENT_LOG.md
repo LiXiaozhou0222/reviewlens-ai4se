@@ -1,5 +1,21 @@
 # AGENT_LOG
 
+## 2026-08-12 01:10:00 +08:00 — JS-007 removal verification and pause
+
+- **Verification:** After mechanical removal, the controller confirmed that
+  active API code/tests contain no `JS-007`, `scan_js_007`, JS-007 metadata,
+  or JS-007-only scanner state. The affected JS files match approved T05.6
+  baseline `9cdd99c`; T05.10 risk files are not yet implemented, so there is
+  no existing risk-fixture dependency to rewrite. Python 3.12 results were
+  JS rules `64 passed` and full backend `133 passed`.
+- **Reviews:** Independent spec-compliance and code-quality reviews both
+  approved the scope removal with no Critical or Important findings. They
+  verified that `3852a88` remains an ancestor/evidence commit and that the
+  formal v1 JS rule set is JS-001…JS-006 only.
+- **Status:** Removal commit `91fd7fa` is real. T05.7 remains cancelled, not
+  complete. Per the user's time-management instruction, the controller now
+  pauses before T05.8; no new implementation task is dispatched.
+
 ## 2026-08-12 00:55:00 +08:00 — T05.7 approved removal
 
 - **Human decision:** After reviewing the architecture evidence in `3852a88`,
