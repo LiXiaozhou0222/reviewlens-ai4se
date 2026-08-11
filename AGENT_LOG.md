@@ -483,3 +483,9 @@
 - **真实 TDD 证据：** subagent 先仅添加测试；控制器从 `apps/api` 使用 `py -3.12 -m pytest` 得到预期 RED：缺少 `scan_js_006`。最小实现后，控制器使用实际测试节点 `test_js_006_finds_unhandled_added_fetch` 验证聚焦 GREEN `1 passed`、JS 规则 `64 passed`、完整后端 `133 passed`。计划预填节点名 `test_js_006_finds_unhandled_added_fetch` 与实际命名顺序不一致，已如实记录；未采纳其他 Python 版本的测试证据。
 - **审查与提交：** fresh spec review 与 fresh code-quality review 均为 **APPROVED**，无 Critical 或 Important。`9cdd99c` (`feat(api): detect unhandled JS fetch calls`) 仅增加固定 JS-006 Medium/language_rule/v1.0.0 元数据、保守的 standalone `fetch()` 识别和合成回归测试；`await`、`return`、赋值、链式处理、注释/字符串、二进制或不支持文件均不报告。
 - **教训：** 对“未处理”这类需要语境判断的规则，应宁可跳过不确定表达式，也不能把可见的 `fetch` 文本误表述为已确认风险；计划中的预填测试节点必须以实际存在的测试名和真实 Python 3.12 输出替换。
+
+## 2026-08-12 00:09:00 +08:00 — 阶段：T05.7 人工收窄与重新执行准备
+
+- **Skill / context：** 控制器使用 `superpowers:brainstorming` 固化用户已确认的 B 方案，并用 `using-git-worktrees` 从最后批准基线 `98916c8` 创建新隔离分支/worktree `codex/js-any-narrow`。旧 `codex/js-rules-risk` 的 T05.7 尝试保留为真实失败、review 和 Python 3.12 证据，不被删除、重写或当作正式成果。
+- **真实证据与人工决定：** 已复现 JSX 文本、对象字面量、`import`/`export` alias、语句标签及正则字面量误报。用户拒绝 tokenizer、AST、TypeScript Compiler 和新增解析依赖，选择只保留变量声明、函数参数/返回与完整调用/索引 expression assertion 等高置信 JS-007 形式，并要求 JSX/字符串/模板/正则/alias 不产生 Finding。
+- **文档修订与边界：** 本轮仅更新 `SPEC.md`、`PLAN.md`、`SPEC_PROCESS.md`、`AGENT_LOG.md` 和 README 的已知限制；没有在新 worktree 创建或运行业务代码、测试、Docker、CI、数据库或部署资产。下一步是 new fresh implementation subagent 从修订后的 T05.7 先写失败测试、由控制器以 Python 3.12 记录 RED，再做最小实现和两阶段审查。

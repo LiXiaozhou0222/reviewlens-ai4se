@@ -749,3 +749,11 @@ PLAN §3 与 T01.1/T01.3 已按上表修改。冷启动暴露的歧义已记录�
 用户明确指示：“解除 AGENTS.md 阶段限制，授权开始 T01 实现。”因此此前的设计阶段门禁已正式关闭：Open Design 已完成、Probe 01 已完成并推动规约修订、修订后的 SPEC/PLAN 已获用户最终确认。
 
 本仓库据此将 `AGENTS.md` 切换为实现阶段约束：从 T01 开始在独立 worktree 中按既定依赖顺序执行，使用 fresh subagent、RED→GREEN→REFACTOR、规约符合性评审、代码质量评审和真实过程留痕。该授权不预先确认任何实现、测试、CI、容器、发布或部署结果，也不解除 `REFLECTION.md` 禁止修改、禁止伪造证据和凭据/敏感数据保护等红线。
+
+## 2026-08-12：JS-007 真实误报后的人工范围收窄
+
+在 `codex/js-rules-risk` 的 T05.7 尝试中，Python 3.12 真实回归分别复现了 JSX 文本、对象字面量、`import`/`export` alias、语句标签和正则字面量中的 `as any`/`: any` 误报。多轮 scoped review 表明，在首期不使用 tokenizer、AST、TypeScript Compiler 或外部解析依赖的约束下，继续扩大 interface/type member 与复杂 TSX 语境识别会造成不可靠的规则膨胀。
+
+用户明确选择 B：保留 JS-007 的 Low 等级，但收窄为变量声明、函数参数/返回类型和完整调用/索引表达式 type assertion 等高置信形式；首期不再要求 interface/type object member、跨行 assertion 或裸标识符 assertion 覆盖。用户同时明确要求 JSX 文本、字符串、模板文本、正则字面量、import/export alias 不得产生 Finding，并确认“保守漏报优于明显误报”。
+
+据此，`SPEC.md`、`PLAN.md` 和 README 已同步精确支持/不支持边界；T05.7 将从批准基线 `98916c8` 在新 `codex/js-any-narrow` worktree 由 fresh subagent 重新执行，至少保留三项已复现误报的 regression tests 与代表性 positive tests。旧分支保留为真实过程证据，不删除、不改写，也不复用其实现 session 或未批准代码；新 worktree 本轮尚未开始新的 T05.7 实现。
