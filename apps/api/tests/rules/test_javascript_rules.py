@@ -2,7 +2,13 @@ import pytest
 
 from app.diff_parser.parser import AddedLine, ParsedDiff, ParsedFile, parse_unified_diff
 from app.models.domain import FindingSource, Severity
-from app.rules.javascript import scan_js_001, scan_js_002, scan_js_003, scan_js_004
+from app.rules.javascript import (
+    scan_js_001,
+    scan_js_002,
+    scan_js_003,
+    scan_js_004,
+    scan_js_005,
+)
 
 
 def test_js_001_finds_added_console_log() -> None:
@@ -714,3 +720,150 @@ def test_js_004_ignores_unsupported_binary_and_deleted_uses() -> None:
 
     assert scan_js_004(parsed_diff) == ()
     assert scan_js_004(binary_diff) == ()
+
+
+def test_js_005_anchors_empty_catch_to_added_line() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/loader.ts b/src/loader.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/loader.ts",
+                "+++ b/src/loader.ts",
+                "@@ -1 +1,7 @@",
+                " export const enabled = true;",
+                "+export async function load() {",
+                "+  try {",
+                "+    await fetch('/api/items');",
+                "+  } catch (error) {",
+                "+  }",
+                "+}",
+            ]
+        )
+    )
+
+    findings = scan_js_005(parsed_diff)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.rule_id == "JS-005"
+    assert finding.rule_version == "1.0.0"
+    assert finding.source is FindingSource.LANGUAGE_RULE
+    assert finding.severity is Severity.MEDIUM
+    assert finding.path == "src/loader.ts"
+    assert finding.new_line == 5
+    assert finding.raw_excerpt == "  } catch (error) {"
+    assert finding.message
+    assert finding.suggestion
+
+
+def test_js_005_finds_fully_added_explicitly_swallowed_exception() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/cache.js b/src/cache.js",
+                "index 1234567..89abcde 100644",
+                "--- a/src/cache.js",
+                "+++ b/src/cache.js",
+                "@@ -1 +1,7 @@",
+                " export const enabled = true;",
+                "+function loadFromCache() {",
+                "+  try {",
+                "+    return readCache();",
+                "+  } catch (error) {",
+                "+    return undefined;",
+                "+  }",
+                "+}",
+            ]
+        )
+    )
+
+    findings = scan_js_005(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].new_line == 5
+    assert findings[0].raw_excerpt == "  } catch (error) {"
+
+
+def test_js_005_finds_fully_added_one_line_empty_catch() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/loader.js b/src/loader.js",
+                "index 1234567..89abcde 100644",
+                "--- a/src/loader.js",
+                "+++ b/src/loader.js",
+                "@@ -1 +1,2 @@",
+                " export const enabled = true;",
+                "+try { work(); } catch (error) {}",
+            ]
+        )
+    )
+
+    findings = scan_js_005(parsed_diff)
+
+    assert len(findings) == 1
+    assert findings[0].new_line == 2
+    assert findings[0].raw_excerpt == "try { work(); } catch (error) {}"
+
+
+def test_js_005_ignores_catches_without_a_wholly_added_structure() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/loader.ts b/src/loader.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/loader.ts",
+                "+++ b/src/loader.ts",
+                "@@ -1,5 +1,6 @@",
+                " export async function load() {",
+                "   try {",
+                "     await fetch('/api/items');",
+                "   } catch (error) {",
+                "+    return undefined;",
+                "   }",
+                " }",
+            ]
+        )
+    )
+
+    assert scan_js_005(parsed_diff) == ()
+
+
+@pytest.mark.parametrize(
+    ("path", "added_line"),
+    [
+        ("src/loader.ts", "// catch (error) { return undefined; }"),
+        ("src/loader.ts", 'const snippet = "catch (error) { }";'),
+        ("src/loader.py", "except Exception: pass"),
+    ],
+)
+def test_js_005_ignores_comments_strings_and_unsupported_files(
+    path: str,
+    added_line: str,
+) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                f"diff --git a/{path} b/{path}",
+                "index 1234567..89abcde 100644",
+                f"--- a/{path}",
+                f"+++ b/{path}",
+                "@@ -1 +1,2 @@",
+                " export const enabled = true;",
+                f"+{added_line}",
+            ]
+        )
+    )
+    binary_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/loader.ts",
+                added_lines=(AddedLine("catch (error) { }", 2),),
+                is_binary=True,
+            ),
+        )
+    )
+
+    assert scan_js_005(parsed_diff) == ()
+    assert scan_js_005(binary_diff) == ()

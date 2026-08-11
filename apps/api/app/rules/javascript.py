@@ -1,7 +1,7 @@
 import re
 from collections.abc import Callable
 
-from app.diff_parser.parser import ParsedDiff
+from app.diff_parser.parser import HunkLine, ParsedDiff
 from app.models.api import FindingDraft
 from app.models.domain import FindingSource, Severity
 from app.rules.catalog import RULESET_VERSION, RuleMetadata
@@ -47,6 +47,16 @@ _JS_004 = RuleMetadata(
     message="A direct HTML injection sink was added.",
     suggestion="Avoid direct HTML injection or sanitize trusted content first.",
 )
+_JS_005 = RuleMetadata(
+    rule_id="JS-005",
+    name="Swallowed exception",
+    source=FindingSource.LANGUAGE_RULE,
+    severity=Severity.MEDIUM,
+    category="javascript",
+    scope="added-line",
+    message="An exception is caught and silently discarded.",
+    suggestion="Handle the exception explicitly or rethrow it.",
+)
 _SUPPORTED_EXTENSIONS = frozenset({".ts", ".tsx", ".js", ".jsx"})
 _CONSOLE_CALL = re.compile(r"(?<![A-Za-z0-9_$.])console\.(?:log|debug)\s*\(")
 _DEBUGGER_STATEMENT = re.compile(
@@ -57,6 +67,12 @@ _DIRECT_HTML_INJECTION = re.compile(
     r"(?:\.[ \t]*innerHTML|(?<![A-Za-z0-9_$])dangerouslySetInnerHTML)"
     r"(?![A-Za-z0-9_$])[ \t]*=(?!=)"
 )
+_TRY_OPENING = re.compile(r"(?<![A-Za-z0-9_$])try\s*\{")
+_CATCH_OPENING = re.compile(r"(?<![A-Za-z0-9_$])catch\s*(?:\([^)]*\))?\s*\{")
+_ONE_LINE_EMPTY_CATCH = re.compile(
+    r"(?<![A-Za-z0-9_$])catch\s*(?:\([^)]*\))?\s*\{\s*\}"
+)
+_SWALLOWED_RETURN = re.compile(r"return(?:\s+(?:undefined|null))?\s*;")
 
 
 def scan_js_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
@@ -225,6 +241,81 @@ def scan_js_004(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
     return tuple(findings)
 
 
+def scan_js_005(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
+    findings: list[FindingDraft] = []
+
+    for parsed_file in parsed_diff.files:
+        if parsed_file.is_binary or not _is_supported_javascript_path(parsed_file.new_path):
+            continue
+
+        for parsed_hunk in parsed_file.hunks:
+            findings.extend(_scan_fully_added_swallowed_catches(parsed_file.new_path, parsed_hunk.lines))
+
+    return tuple(findings)
+
+
+def _scan_fully_added_swallowed_catches(
+    path: str,
+    hunk_lines: tuple[HunkLine, ...],
+) -> list[FindingDraft]:
+    findings: list[FindingDraft] = []
+    segment: list[HunkLine] = []
+
+    for hunk_line in (*hunk_lines, None):
+        if hunk_line is not None and hunk_line.kind == "added":
+            segment.append(hunk_line)
+            continue
+
+        findings.extend(_scan_added_catch_segment(path, segment))
+        segment = []
+
+    return findings
+
+
+def _scan_added_catch_segment(
+    path: str,
+    segment: list[HunkLine],
+) -> list[FindingDraft]:
+    findings: list[FindingDraft] = []
+    scanner = _JavaScriptLineScanner()
+    try_openings: list[int] = []
+
+    for index, hunk_line in enumerate(segment):
+        if scanner.scan(hunk_line.content, _TRY_OPENING):
+            try_openings.append(index)
+        if not try_openings or not scanner.scan(hunk_line.content, _CATCH_OPENING):
+            continue
+
+        if scanner.scan(hunk_line.content, _ONE_LINE_EMPTY_CATCH):
+            findings.append(
+                _new_js_005_finding(path, hunk_line.new_line, hunk_line.content)
+            )
+            continue
+
+        body_end = _catch_body_end(segment, index)
+        if body_end is None or not _is_empty_or_swallowed_catch(segment[index + 1 : body_end]):
+            continue
+
+        findings.append(
+            _new_js_005_finding(path, hunk_line.new_line, hunk_line.content)
+        )
+
+    return findings
+
+
+def _catch_body_end(segment: list[HunkLine], catch_index: int) -> int | None:
+    for index in range(catch_index + 1, len(segment)):
+        if segment[index].content.strip() == "}":
+            return index
+    return None
+
+
+def _is_empty_or_swallowed_catch(body: list[HunkLine]) -> bool:
+    if not body:
+        return True
+    return len(body) == 1 and bool(_SWALLOWED_RETURN.fullmatch(body[0].content.strip()))
+
+
 def _is_supported_javascript_path(path: str) -> bool:
     return path.casefold().endswith(tuple(_SUPPORTED_EXTENSIONS))
 
@@ -294,6 +385,24 @@ def _new_js_004_finding(
         raw_excerpt=raw_excerpt,
         message=_JS_004.message,
         suggestion=_JS_004.suggestion,
+    )
+
+
+def _new_js_005_finding(
+    path: str,
+    new_line: int | None,
+    raw_excerpt: str,
+) -> FindingDraft:
+    return FindingDraft(
+        rule_id=_JS_005.rule_id,
+        rule_version=RULESET_VERSION,
+        source=_JS_005.source,
+        severity=_JS_005.severity,
+        path=path,
+        new_line=new_line,
+        raw_excerpt=raw_excerpt,
+        message=_JS_005.message,
+        suggestion=_JS_005.suggestion,
     )
 
 
