@@ -8,6 +8,7 @@ from app.rules.javascript import (
     scan_js_003,
     scan_js_004,
     scan_js_005,
+    scan_js_006,
 )
 
 
@@ -867,3 +868,91 @@ def test_js_005_ignores_comments_strings_and_unsupported_files(
 
     assert scan_js_005(parsed_diff) == ()
     assert scan_js_005(binary_diff) == ()
+
+
+def test_js_006_finds_unhandled_added_fetch() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/loader.ts b/src/loader.ts",
+                "index 1234567..89abcde 100644",
+                "--- a/src/loader.ts",
+                "+++ b/src/loader.ts",
+                "@@ -7,2 +7,3 @@",
+                " export const enabled = true;",
+                "+fetch('/api/items');",
+                " export const retryLimit = 3;",
+            ]
+        )
+    )
+
+    findings = scan_js_006(parsed_diff)
+
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding.rule_id == "JS-006"
+    assert finding.rule_version == "1.0.0"
+    assert finding.source is FindingSource.LANGUAGE_RULE
+    assert finding.severity is Severity.MEDIUM
+    assert finding.path == "src/loader.ts"
+    assert finding.new_line == 8
+    assert finding.raw_excerpt == "fetch('/api/items');"
+    assert finding.message
+    assert finding.suggestion
+
+
+@pytest.mark.parametrize(
+    "added_line",
+    [
+        "await fetch('/api/items');",
+        "return fetch('/api/items');",
+        "fetch('/api/items').then(handleResponse);",
+        "const request = fetch('/api/items');",
+        "// fetch('/api/items');",
+        'const example = "fetch(\\\'/api/items\\\')";',
+    ],
+)
+def test_js_006_ignores_handled_or_uncertain_added_fetches(added_line: str) -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/loader.js b/src/loader.js",
+                "index 1234567..89abcde 100644",
+                "--- a/src/loader.js",
+                "+++ b/src/loader.js",
+                "@@ -1 +1,2 @@",
+                " export const enabled = true;",
+                f"+{added_line}",
+            ]
+        )
+    )
+
+    assert scan_js_006(parsed_diff) == ()
+
+
+def test_js_006_ignores_unsupported_and_binary_added_fetches() -> None:
+    parsed_diff = parse_unified_diff(
+        "\n".join(
+            [
+                "diff --git a/src/loader.py b/src/loader.py",
+                "index 1234567..89abcde 100644",
+                "--- a/src/loader.py",
+                "+++ b/src/loader.py",
+                "@@ -1 +1,2 @@",
+                " enabled = True",
+                "+fetch('/api/items');",
+            ]
+        )
+    )
+    binary_diff = ParsedDiff(
+        files=(
+            ParsedFile(
+                new_path="src/loader.ts",
+                added_lines=(AddedLine("fetch('/api/items');", 2),),
+                is_binary=True,
+            ),
+        )
+    )
+
+    assert scan_js_006(parsed_diff) == ()
+    assert scan_js_006(binary_diff) == ()

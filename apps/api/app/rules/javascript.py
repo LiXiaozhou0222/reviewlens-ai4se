@@ -57,6 +57,16 @@ _JS_005 = RuleMetadata(
     message="An exception is caught and silently discarded.",
     suggestion="Handle the exception explicitly or rethrow it.",
 )
+_JS_006 = RuleMetadata(
+    rule_id="JS-006",
+    name="Unhandled fetch call",
+    source=FindingSource.LANGUAGE_RULE,
+    severity=Severity.MEDIUM,
+    category="javascript",
+    scope="added-line",
+    message="A fetch() call was added without awaiting, returning, or handling it.",
+    suggestion="Await, return, or explicitly handle the fetch() promise.",
+)
 _SUPPORTED_EXTENSIONS = frozenset({".ts", ".tsx", ".js", ".jsx"})
 _CONSOLE_CALL = re.compile(r"(?<![A-Za-z0-9_$.])console\.(?:log|debug)\s*\(")
 _DEBUGGER_STATEMENT = re.compile(
@@ -73,6 +83,7 @@ _ONE_LINE_EMPTY_CATCH = re.compile(
     r"(?<![A-Za-z0-9_$])catch\s*(?:\([^)]*\))?\s*\{\s*\}"
 )
 _SWALLOWED_RETURN = re.compile(r"return(?:\s+(?:undefined|null))?\s*;")
+_FETCH_CALL = re.compile(r"(?<![A-Za-z0-9_$.])fetch\s*\(")
 
 
 def scan_js_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
@@ -254,6 +265,52 @@ def scan_js_005(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
     return tuple(findings)
 
 
+def scan_js_006(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
+    findings: list[FindingDraft] = []
+
+    for parsed_file in parsed_diff.files:
+        if parsed_file.is_binary or not _is_supported_javascript_path(parsed_file.new_path):
+            continue
+
+        if parsed_file.hunks:
+            for parsed_hunk in parsed_file.hunks:
+                scanner = _JavaScriptLineScanner()
+                for hunk_line in parsed_hunk.lines:
+                    if hunk_line.kind == "deleted":
+                        continue
+                    contains_unhandled_fetch = scanner.scan(
+                        hunk_line.content,
+                        _FETCH_CALL,
+                        _is_unhandled_fetch_call,
+                    )
+                    if hunk_line.kind != "added" or not contains_unhandled_fetch:
+                        continue
+                    findings.append(
+                        _new_js_006_finding(
+                            parsed_file.new_path,
+                            hunk_line.new_line,
+                            hunk_line.content,
+                        )
+                    )
+            continue
+
+        for added_line in parsed_file.added_lines:
+            if _JavaScriptLineScanner().scan(
+                added_line.content,
+                _FETCH_CALL,
+                _is_unhandled_fetch_call,
+            ):
+                findings.append(
+                    _new_js_006_finding(
+                        parsed_file.new_path,
+                        added_line.new_line,
+                        added_line.content,
+                    )
+                )
+
+    return tuple(findings)
+
+
 def _scan_fully_added_swallowed_catches(
     path: str,
     hunk_lines: tuple[HunkLine, ...],
@@ -404,6 +461,64 @@ def _new_js_005_finding(
         message=_JS_005.message,
         suggestion=_JS_005.suggestion,
     )
+
+
+def _new_js_006_finding(
+    path: str,
+    new_line: int | None,
+    raw_excerpt: str,
+) -> FindingDraft:
+    return FindingDraft(
+        rule_id=_JS_006.rule_id,
+        rule_version=RULESET_VERSION,
+        source=_JS_006.source,
+        severity=_JS_006.severity,
+        path=path,
+        new_line=new_line,
+        raw_excerpt=raw_excerpt,
+        message=_JS_006.message,
+        suggestion=_JS_006.suggestion,
+    )
+
+
+def _is_unhandled_fetch_call(line: str, match: re.Match[str]) -> bool:
+    if line[: match.start()].strip():
+        return False
+
+    call_end = _fetch_call_end(line, match.end() - 1)
+    if call_end is None:
+        return False
+
+    suffix = line[call_end + 1 :].strip()
+    return suffix in {"", ";"} or suffix.startswith("; //")
+
+
+def _fetch_call_end(line: str, opening_parenthesis: int) -> int | None:
+    depth = 0
+    quote: str | None = None
+    index = opening_parenthesis
+
+    while index < len(line):
+        character = line[index]
+        if quote is not None:
+            if character == "\\":
+                index += 2
+                continue
+            if character == quote:
+                quote = None
+            index += 1
+            continue
+        if character in {"'", '"', "`"}:
+            quote = character
+        elif character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+            if depth == 0:
+                return index
+        index += 1
+
+    return None
 
 
 def _is_direct_eval_call(line: str, match: re.Match[str]) -> bool:
