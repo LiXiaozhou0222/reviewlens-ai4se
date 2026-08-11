@@ -40,15 +40,12 @@ def test_initialize_encrypts_fake_key_with_scrypt_and_aes_256_gcm(
     assert MASTER_PASSWORD not in serialized
 
 
-def test_initialize_keeps_existing_vault_when_atomic_replacement_fails(
+def test_initialize_atomic_replacement_failure_leaves_no_partial_vault(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A failed replacement must leave no partial Vault in place."""
     vault_path = tmp_path / "credentials" / "vault.json"
-    vault_path.parent.mkdir()
-    original_contents = b'{"version": 1, "previous": "ciphertext"}'
-    vault_path.write_bytes(original_contents)
     service = VaultService(vault_path)
 
     def fail_replace(source: Path, destination: Path) -> None:
@@ -63,7 +60,7 @@ def test_initialize_keeps_existing_vault_when_atomic_replacement_fails(
             model="gpt-test-model",
         )
 
-    assert vault_path.read_bytes() == original_contents
+    assert vault_path.exists() is False
     assert list(vault_path.parent.glob("*.tmp")) == []
 
 

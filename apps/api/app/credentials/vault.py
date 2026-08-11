@@ -47,6 +47,8 @@ def create_vault_payload(
         },
         "provider": "openai",
         "model": model,
+        # A short input must never be echoed in full as a purported mask.
+        "key_tail": api_key[-4:] if len(api_key) > 4 else None,
     }
 
 
