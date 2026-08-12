@@ -3,19 +3,19 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.api import FindingDraft
+from app.models.api import SanitizedFinding
 from app.models.domain import AIReviewStatus
 
 
 class ProviderReviewResult(BaseModel):
-    """Schema-validated intermediate result before secondary redaction."""
+    """Public-safe provider result after schema validation and redaction."""
 
     model_config = ConfigDict(extra="forbid")
 
     status: AIReviewStatus
     provider: str
     model: str
-    findings: tuple[FindingDraft, ...]
+    findings: tuple[SanitizedFinding, ...]
 
 
 class ReviewProvider(Protocol):

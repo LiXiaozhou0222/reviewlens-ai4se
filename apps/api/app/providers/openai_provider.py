@@ -1,6 +1,6 @@
 import json
 from collections.abc import Mapping
-from typing import Protocol
+from typing import Annotated, Literal, Protocol
 
 from openai import (
     APIConnectionError,
@@ -12,10 +12,12 @@ from openai import (
     OpenAI,
     RateLimitError,
 )
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from app.models.domain import AIReviewStatus
+from app.models.api import FindingDraft
+from app.models.domain import AIReviewStatus, FindingSource, Severity
 from app.providers.base import ProviderReviewResult
-from app.reviews.redaction import redact_provider_payload
+from app.reviews.redaction import redact_ai_finding, redact_provider_payload
 
 
 _OFFICIAL_OPENAI_BASE_URL = "https://api.openai.com/v1"
@@ -31,6 +33,39 @@ class _ResponsesAPI(Protocol):
 
 class _OpenAIClient(Protocol):
     responses: _ResponsesAPI
+
+
+class _AIResponseFinding(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    rule_id: Literal["AI-001"]
+    rule_version: Literal["1.0.0"]
+    source: Literal[FindingSource.AI]
+    severity: Severity
+    path: Literal["provider/ai-review"]
+    new_line: Annotated[int, Field(ge=1)] | None
+    raw_excerpt: str
+    message: str
+    suggestion: str
+
+    def to_draft(self) -> FindingDraft:
+        return FindingDraft(
+            rule_id=self.rule_id,
+            rule_version=self.rule_version,
+            source=self.source,
+            severity=self.severity,
+            path=self.path,
+            new_line=self.new_line,
+            raw_excerpt=self.raw_excerpt,
+            message=self.message,
+            suggestion=self.suggestion,
+        )
+
+
+class _AIResponsePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    findings: tuple[_AIResponseFinding, ...]
 
 
 class OpenAIReviewProvider:
@@ -58,13 +93,21 @@ class OpenAIReviewProvider:
     def review(self, payload: Mapping[str, object]) -> ProviderReviewResult:
         controlled_payload = redact_provider_payload(payload)
         try:
-            self._client.responses.create(
+            response = self._client.responses.create(
                 model=self._model,
                 input=json.dumps(
                     controlled_payload, sort_keys=True, separators=(",", ":")
                 ),
                 instructions=_SYSTEM_INSTRUCTIONS,
                 store=False,
+                text={
+                    "format": {
+                        "type": "json_schema",
+                        "name": "reviewlens_ai_findings",
+                        "strict": True,
+                        "schema": _AIResponsePayload.model_json_schema(),
+                    }
+                },
             )
         except APITimeoutError:
             return self._public_failure(AIReviewStatus.TIMEOUT)
@@ -79,11 +122,23 @@ class OpenAIReviewProvider:
         except (APIConnectionError, APIStatusError):
             return self._public_failure(AIReviewStatus.PROVIDER_UNAVAILABLE)
 
+        try:
+            output_text = response.output_text
+            if not isinstance(output_text, str) or not output_text.strip():
+                return self._public_failure(AIReviewStatus.INVALID_RESPONSE)
+            validated = _AIResponsePayload.model_validate_json(output_text)
+        except (AttributeError, TypeError, ValidationError):
+            return self._public_failure(AIReviewStatus.INVALID_RESPONSE)
+
+        safe_findings = tuple(
+            redact_ai_finding(finding.to_draft())
+            for finding in validated.findings
+        )
         return ProviderReviewResult(
-            status=AIReviewStatus.INVALID_RESPONSE,
+            status=AIReviewStatus.SUCCEEDED,
             provider="openai",
             model=self._model,
-            findings=(),
+            findings=safe_findings,
         )
 
     def _public_failure(self, status: AIReviewStatus) -> ProviderReviewResult:
