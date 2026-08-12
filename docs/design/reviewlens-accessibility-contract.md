@@ -1,7 +1,7 @@
 # ReviewLens Accessibility Contract
 
-**Task:** T13.1  
-**Applies to:** the later Review workspace, current report and private-only Vault workspace  
+**Task:** T13.1<br>
+**Applies to:** the later Review workspace, current report and private-only Vault workspace<br>
 **Design review basis:** `web-design-guidelines`, using its pinned local guideline snapshot
 
 ## 1. Keyboard and focus
