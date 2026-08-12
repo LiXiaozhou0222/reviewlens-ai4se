@@ -21,4 +21,10 @@ class ProviderReviewResult(BaseModel):
 class ReviewProvider(Protocol):
     """One-shot provider contract for controlled, already-redacted payloads."""
 
+    @property
+    def provider_name(self) -> str: ...
+
+    @property
+    def model_name(self) -> str: ...
+
     def review(self, payload: Mapping[str, object]) -> ProviderReviewResult: ...

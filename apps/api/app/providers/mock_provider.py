@@ -13,6 +13,14 @@ MOCK_MODEL_NAME = "mock-reviewlens-v1"
 class MockReviewProvider:
     """Deterministic, offline provider for demo, CI, and local development."""
 
+    @property
+    def provider_name(self) -> str:
+        return MOCK_PROVIDER_NAME
+
+    @property
+    def model_name(self) -> str:
+        return MOCK_MODEL_NAME
+
     def review(self, payload: Mapping[str, object]) -> ProviderReviewResult:
         """Return controlled synthetic data without reading untrusted payload text."""
 
