@@ -67,6 +67,7 @@ _JS_006 = RuleMetadata(
     message="A fetch() call was added without awaiting, returning, or handling it.",
     suggestion="Await, return, or explicitly handle the fetch() promise.",
 )
+JAVASCRIPT_RULES = (_JS_001, _JS_002, _JS_003, _JS_004, _JS_005, _JS_006)
 _SUPPORTED_EXTENSIONS = frozenset({".ts", ".tsx", ".js", ".jsx"})
 _CONSOLE_CALL = re.compile(r"(?<![A-Za-z0-9_$.])console\.(?:log|debug)\s*\(")
 _DEBUGGER_STATEMENT = re.compile(
