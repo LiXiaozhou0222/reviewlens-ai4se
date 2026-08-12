@@ -10,6 +10,9 @@ REDACTED_CREDENTIAL_MESSAGE = "A credential-like value was added and redacted."
 REDACTED_CREDENTIAL_SUGGESTION = (
     "Remove the credential and use a secure secret store."
 )
+REDACTED_RULE_EXCERPT = "[REDACTED_FINDING_CONTEXT]"
+REDACTED_RULE_MESSAGE = "A deterministic rule matched an added change."
+REDACTED_RULE_SUGGESTION = "Review the rule identifier and affected location."
 REDACTED_PROVIDER_MESSAGE = "Provider-supplied text was withheld for safety."
 REDACTED_PROVIDER_SUGGESTION = (
     "Review the deterministic findings before applying any provider suggestion."
@@ -17,8 +20,16 @@ REDACTED_PROVIDER_SUGGESTION = (
 
 
 def redact_finding(finding: FindingDraft) -> SanitizedFinding:
-    if finding.rule_id != "GEN-001":
-        raise ValueError("T06.1 only supports GEN-001 credential findings")
+    if finding.rule_id == "GEN-001":
+        excerpt = REDACTED_CREDENTIAL
+        message = REDACTED_CREDENTIAL_MESSAGE
+        suggestion = REDACTED_CREDENTIAL_SUGGESTION
+        category = "credential"
+    else:
+        excerpt = REDACTED_RULE_EXCERPT
+        message = REDACTED_RULE_MESSAGE
+        suggestion = REDACTED_RULE_SUGGESTION
+        category = "deterministic_rule"
 
     return SanitizedFinding(
         rule_id=finding.rule_id,
@@ -27,12 +38,12 @@ def redact_finding(finding: FindingDraft) -> SanitizedFinding:
         severity=finding.severity,
         path=finding.path,
         new_line=finding.new_line,
-        excerpt=REDACTED_CREDENTIAL,
-        message=REDACTED_CREDENTIAL_MESSAGE,
-        suggestion=REDACTED_CREDENTIAL_SUGGESTION,
+        excerpt=excerpt,
+        message=message,
+        suggestion=suggestion,
         redacted=True,
         redaction_version=REDACTION_VERSION,
-        redaction_category="credential",
+        redaction_category=category,
     )
 
 
