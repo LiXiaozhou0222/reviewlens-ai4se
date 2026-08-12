@@ -1,5 +1,13 @@
 # AGENT_LOG
 
+## 2026-08-13 - T12.3 completed / private Vault admin routes
+
+- **Task / worktree:** Fresh implementation subagent completed T12.3 in isolated `codex/admin-observability-t12-3`. Code commit `9d6c0df` adds private-only Vault routes; review repair commit `430e6fa` closes credential echo in request-validation errors.
+- **RED/GREEN:** Initial RED proved private routes were absent while Demo already had no admin routes. Initial GREEN produced 5 focused passes and 254 full-backend passes on Python 3.12. A fresh spec review then reproduced a security RED: malformed credential input returned FastAPI 422 and could echo the submitted secret. The repair maps request validation failures to stable `400 INVALID_REQUEST` without validation `input`; focused tests reached 6 passed, API tests 24 passed, and final full backend 255 passed.
+- **Behavior:** Private registers status/initialize/unlock/lock/update/clear under `/admin/v1/vault`; Demo registers none. Responses never return raw API keys, master passwords, Vault exception text, or stack traces. Actual host/container loopback publication remains the explicit T17 runtime boundary.
+- **Reviews:** Initial spec review rejected the credential-echo boundary. After repair, exact Python 3.12 regression and full-suite verification passed; final spec and code-quality gates found no remaining release blocker.
+- **Evidence boundary:** No real key, private Diff, OpenAI request, deployment, registry, external CI, or public URL was used or claimed.
+
 ## 2026-08-13 - T12.1 completed / health and readiness endpoints
 
 - **Task / worktree:** T12.1 was implemented and reviewed in isolated `codex/release-health` at `040155b` (`feat(api): add health and readiness endpoints`). The change is limited to health/readiness wiring, fixed ruleset readiness validation, and focused tests.

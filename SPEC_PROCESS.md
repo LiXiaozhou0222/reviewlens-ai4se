@@ -1,5 +1,9 @@
 # ReviewLens 规约生成过程
 
+## 2026-08-13 - T12.3 admin boundary evidence
+
+T12.3 completed in isolated `codex/admin-observability-t12-3`: `9d6c0df` added the private-only Vault management router and `430e6fa` repaired a review-discovered credential-echo risk in FastAPI request-validation errors. The first review did not approve the default 422 path because malformed `master_password` or `api_key` values could appear in the response `input`. A real Python 3.12 RED reproduced 422 instead of the required sanitized public response. The minimal repair introduced stable `400 INVALID_REQUEST` without submitted input. Final evidence was 6 focused admin tests, 24 API tests, and 255 full-backend tests passed; compileall and Git checks were clean. The task ledger moved to 49/62 complete with 13 P0 tasks remaining. Loopback listener and Docker host publication remain T17 runtime evidence, while Demo route non-registration is already enforced here.
+
 ## 2026-08-13 - T12.1 health/readiness evidence
 
 T12.1 was completed in isolated `codex/release-health` and committed as `040155b`. The implementation used Python 3.12.10 only. Real verification recorded 9 health tests passed, 66 JavaScript-rule tests passed, 249 full-backend tests passed, and clean `git diff --check`. Fresh spec-compliance and code-quality reviews approved the task without Critical findings. The task ledger was updated from 47/62 to 48/62 completed, with 14 P0 tasks remaining. No external deployment, registry, CI, OpenAI request, real credential, or private Diff was used or claimed.

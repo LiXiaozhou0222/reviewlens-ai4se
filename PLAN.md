@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 48，待执行 P0 为 14，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 49，待执行 P0 为 13，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -74,6 +74,7 @@
 | T10.3 retrospective Provider-boundary repair | `f3d9b64` |
 | T11.1 | `13b6b0a` |
 | T12.1 | `040155b` |
+| T12.3 | `9d6c0df`, security repair `430e6fa` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
@@ -131,7 +132,6 @@ flowchart LR
 | T06.1 | `app/reviews/redaction.py`、`tests/reviews/test_finding_redaction.py`；GEN-001 不可逆替换。 | `...test_gen_001_never_retains_secret_or_tail -q` 先失败后 1 passed。 |
 | T06.2 | `app/reviews/schemas.py`、`tests/reviews/test_redacted_schema.py`；SanitizedFinding 拒绝 raw 字段。 | `...test_sanitized_finding_has_no_raw_secret_field -q` 先失败后 1 passed。 |
 | T06.3 | 同上；Provider payload 和 AI Finding 的二次脱敏。 | `...test_ai_payload_and_ai_finding_are_redacted -q` 先失败后 1 passed。 |
-| T12.3 | `app/api/admin.py`、`tests/api/test_admin_loopback.py`；private loopback Vault routes，Demo 不注册。 | `...test_demo_registers_no_vault_route -q` 先失败后 1 passed。 |
 | T12.5 | `app/observability/logging.py`、`tests/api/test_log_redaction.py`；关联 ID 与脱敏结构化日志。 | `...test_structured_log_excludes_diff_and_secret -q` 先失败后 1 passed。 |
 | T14.1 | `apps/web/src/api/client.ts`、`features/input/DiffInputForm.tsx`、对应 Vitest；POST client、粘贴/单文件上传、上限/错误、键盘与防重复提交。 | `npm.cmd run test -- --run tests/DiffInputForm.test.tsx -t "prevents duplicate submit while loading"` 先失败后 1 passed。 |
 | T15.1 | `features/report/ReportSummary.tsx`、`FindingSections.tsx`、`MarkdownExport.ts`、对应测试；结果双分区、文字等级、能力提示与浏览器 Markdown。 | `npm.cmd run test -- --run tests/ReportSummary.test.tsx -t "separates deterministic conclusion from AI advice"` 先失败后 1 passed。 |
