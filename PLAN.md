@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 35，待执行 P0 为 27，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 36，待执行 P0 为 26，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -60,6 +60,7 @@
 | T05.10 | `8b367ce` |
 | T06.1 | `c7e60fa` |
 | T06.2 | `e5ce79d` |
+| T06.3 | `0b3104e` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
@@ -111,7 +112,6 @@ flowchart LR
 
 | Task | 文件与唯一职责 | RED / GREEN 验收 |
 | --- | --- | --- |
-| T06.3 | 同上；Provider payload 和 AI Finding 的二次脱敏。 | `...test_ai_payload_and_ai_finding_are_redacted -q` 先失败后 1 passed。 |
 | T08.1 | `app/credentials/vault.py`、`service.py`、`tests/credentials/test_vault_lifecycle.py`；scrypt/AES-GCM、原子写入、内存解锁。 | `...test_correct_password_unlocks_in_memory_only -q` 先失败后 1 passed。 |
 | T08.3 | `app/credentials/service.py`、`tests/credentials/test_vault_failures.py`；统一失败、延迟、损坏 Vault。 | `...test_wrong_password_returns_uniform_failure -q` 先失败后 1 passed。 |
 | T08.4 | Vault 更新、清除、重启锁定、掩码状态。 | `...test_clear_removes_file_and_memory_credential -q` 先失败后 1 passed。 |
