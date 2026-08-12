@@ -122,3 +122,16 @@ def test_admin_wrong_password_has_stable_error_without_internal_details(
     assert response.json() == {"detail": {"code": "VAULT_OPERATION_FAILED"}}
     assert "Vault unlock failed" not in response.text
     assert "Traceback" not in response.text
+
+
+def test_admin_validation_error_does_not_echo_credentials(tmp_path: Path) -> None:
+    client = _private_client(tmp_path)
+    submitted_secret = "SECRET-MASTER-DO-NOT-ECHO"
+
+    response = client.post(
+        "/admin/v1/vault/unlock", json={"master_password": [submitted_secret]}
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": {"code": "INVALID_REQUEST"}}
+    assert submitted_secret not in response.text
