@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 from app.models.api import FindingDraft, SanitizedFinding
 from app.models.domain import FindingSource
@@ -17,6 +17,16 @@ REDACTED_PROVIDER_MESSAGE = "Provider-supplied text was withheld for safety."
 REDACTED_PROVIDER_SUGGESTION = (
     "Review the deterministic findings before applying any provider suggestion."
 )
+ALLOWED_PROVIDER_FINDING_CONTRACTS = frozenset(
+    {
+        ("AI-001", "1.0.0", "provider/ai-review"),
+        ("AI-MOCK-001", "1.0.0", "mock/synthetic-review"),
+    }
+)
+
+
+def _is_strict_int(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def redact_finding(finding: FindingDraft) -> SanitizedFinding:
@@ -48,14 +58,54 @@ def redact_finding(finding: FindingDraft) -> SanitizedFinding:
 
 
 def redact_provider_payload(payload: Mapping[str, object]) -> dict[str, object]:
-    """Build the current provider contract from controlled values only.
+    """Copy only the structured, public-safe provider contract fields."""
 
-    Provider-bound fields will be added deliberately by the provider task.  Until
-    then, no caller-supplied text, mappings, or collection values are admitted.
-    """
+    safe_payload: dict[str, object] = {"output_schema_version": REDACTION_VERSION}
+    files = payload.get("files")
+    if isinstance(files, Sequence) and not isinstance(files, (str, bytes)):
+        safe_payload["files"] = [
+            {
+                "path": item["path"],
+                "change_type": item["change_type"],
+                "added_line_count": item["added_line_count"],
+                "deleted_line_count": item["deleted_line_count"],
+            }
+            for item in files
+            if isinstance(item, Mapping)
+            and isinstance(item.get("path"), str)
+            and isinstance(item.get("change_type"), str)
+            and _is_strict_int(item.get("added_line_count"))
+            and item["added_line_count"] >= 0
+            and _is_strict_int(item.get("deleted_line_count"))
+            and item["deleted_line_count"] >= 0
+        ]
 
-    del payload
-    return {"output_schema_version": REDACTION_VERSION}
+    findings = payload.get("deterministic_findings")
+    if isinstance(findings, Sequence) and not isinstance(findings, (str, bytes)):
+        safe_payload["deterministic_findings"] = [
+            {
+                "rule_id": item["rule_id"],
+                "severity": item["severity"],
+                "path": item["path"],
+                "new_line": item["new_line"],
+                "redaction_category": item["redaction_category"],
+            }
+            for item in findings
+            if isinstance(item, Mapping)
+            and isinstance(item.get("rule_id"), str)
+            and isinstance(item.get("severity"), str)
+            and isinstance(item.get("path"), str)
+            and (
+                item.get("new_line") is None
+                or (
+                    _is_strict_int(item.get("new_line"))
+                    and item["new_line"] > 0
+                )
+            )
+            and isinstance(item.get("redaction_category"), str)
+        ]
+
+    return safe_payload
 
 
 def redact_ai_finding(finding: FindingDraft) -> SanitizedFinding:

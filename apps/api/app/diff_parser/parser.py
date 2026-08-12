@@ -76,6 +76,12 @@ def parse_unified_diff(text: str) -> ParsedDiff:
     def finish_file() -> None:
         if new_path is not None:
             finish_hunk()
+            if not (
+                hunks
+                or change_type in {"renamed", "deleted"}
+                or is_binary
+            ):
+                raise DiffNormalizationError(PublicErrorCode.INVALID_DIFF_FORMAT)
             files.append(
                 ParsedFile(
                     new_path,

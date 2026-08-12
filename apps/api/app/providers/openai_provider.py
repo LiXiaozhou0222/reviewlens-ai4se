@@ -90,6 +90,14 @@ class OpenAIReviewProvider:
             )
         )
 
+    @property
+    def provider_name(self) -> str:
+        return "openai"
+
+    @property
+    def model_name(self) -> str:
+        return self._model
+
     def review(self, payload: Mapping[str, object]) -> ProviderReviewResult:
         controlled_payload = redact_provider_payload(payload)
         try:

@@ -1,7 +1,8 @@
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
 
 from app.models.domain import AIReviewStatus, FindingSource, Severity
 
@@ -29,11 +30,11 @@ class SanitizedFinding(BaseModel):
     source: FindingSource
     severity: Severity
     path: str
-    new_line: int | None
+    new_line: Annotated[int, Field(strict=True, ge=1)] | None
     excerpt: str
     message: str
     suggestion: str
-    redacted: bool
+    redacted: StrictBool
     redaction_version: str
     redaction_category: str | None
 
