@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 45，待执行 P0 为 17，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 46，待执行 P0 为 16，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -70,6 +70,7 @@
 | T09.1 | `bc56af4` |
 | T09.2 | `6059a87` |
 | T09.3 | `45bf113` |
+| T10.3 | `8c96adf` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
@@ -127,7 +128,6 @@ flowchart LR
 | T06.1 | `app/reviews/redaction.py`、`tests/reviews/test_finding_redaction.py`；GEN-001 不可逆替换。 | `...test_gen_001_never_retains_secret_or_tail -q` 先失败后 1 passed。 |
 | T06.2 | `app/reviews/schemas.py`、`tests/reviews/test_redacted_schema.py`；SanitizedFinding 拒绝 raw 字段。 | `...test_sanitized_finding_has_no_raw_secret_field -q` 先失败后 1 passed。 |
 | T06.3 | 同上；Provider payload 和 AI Finding 的二次脱敏。 | `...test_ai_payload_and_ai_finding_are_redacted -q` 先失败后 1 passed。 |
-| T10.3 | 同上；附加一次 Provider 调用，成功/失败均返回确定性结果。 | `...test_ai_failure_preserves_redacted_deterministic_report -q` 先失败后 1 passed。 |
 | T11.1 | `app/api/reviews.py`、`tests/api/test_reviews_api.py`、`test_demo_routes.py`；POST review 与 Demo/private 路由模式边界。 | `...test_post_review_returns_sanitized_report -q` 先失败后 1 passed。 |
 | T12.1 | `app/api/health.py`、`tests/api/test_health.py`；health/ready 不依赖 OpenAI 或数据库。 | `...test_ready_is_available_when_vault_is_locked -q` 先失败后 1 passed。 |
 | T12.3 | `app/api/admin.py`、`tests/api/test_admin_loopback.py`；private loopback Vault routes，Demo 不注册。 | `...test_demo_registers_no_vault_route -q` 先失败后 1 passed。 |
