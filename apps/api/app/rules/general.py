@@ -33,17 +33,6 @@ _HTTP_URL = re.compile(
 _DYNAMIC_HTTP_HOST = re.compile(r"\$\{|\{\{|\$[A-Za-z_][A-Za-z0-9_]*")
 
 
-def replace_literal_credentials(text: str, replacement: str) -> str:
-    """Replace GEN-001 literal assignments while preserving dynamic references."""
-
-    def replace_match(match: re.Match[str]) -> str:
-        if _DYNAMIC_CREDENTIAL_REFERENCE.fullmatch(match.group("value")):
-            return match.group(0)
-        return replacement
-
-    return _CREDENTIAL_LITERAL.sub(replace_match, text)
-
-
 def scan_gen_001(parsed_diff: ParsedDiff) -> tuple[FindingDraft, ...]:
     findings: list[FindingDraft] = []
 

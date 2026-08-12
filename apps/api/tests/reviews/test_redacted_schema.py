@@ -45,7 +45,7 @@ def test_sanitized_finding_has_no_raw_secret_field() -> None:
 
 
 def test_ai_payload_and_ai_finding_are_redacted() -> None:
-    fake_credential = "ordinarySecretValue123"
+    fake_credential = "demoCredentialAlpha123"
     credential_assignment = f'API_KEY = "{fake_credential}"'
     provider_payload = {
         "deterministic_summary": {
@@ -55,6 +55,7 @@ def test_ai_payload_and_ai_finding_are_redacted() -> None:
                 "notes": [
                     f"Credential observed: {credential_assignment}",
                     {"suggestion": f"Remove {credential_assignment} immediately."},
+                    f"Uncontrolled provider text: {fake_credential}",
                 ],
             },
         },
@@ -69,9 +70,9 @@ def test_ai_payload_and_ai_finding_are_redacted() -> None:
         severity=Severity.HIGH,
         path="src/config.ts",
         new_line=12,
-        raw_excerpt=credential_assignment,
-        message=f"The added credential {credential_assignment} can be exposed.",
-        suggestion=f"Remove {credential_assignment} and load it from a secret store.",
+        raw_excerpt=fake_credential,
+        message=f"The provider freely returned {fake_credential}.",
+        suggestion=f"Remove {fake_credential} and load it from a secret store.",
     )
     original_payload = deepcopy(provider_payload)
     original_ai_finding = ai_finding.model_dump()
@@ -86,6 +87,7 @@ def test_ai_payload_and_ai_finding_are_redacted() -> None:
     assert "Value123" not in serialized_output
     assert "raw_prompt" not in safe_payload
     assert "raw_response" not in safe_payload
+    assert safe_payload == {"output_schema_version": "1.0.0"}
     assert isinstance(safe_ai_finding, SanitizedFinding)
     assert safe_ai_finding.source is FindingSource.AI
     assert safe_ai_finding.redacted is True
