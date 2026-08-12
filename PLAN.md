@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 36，待执行 P0 为 26，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 37，待执行 P0 为 25，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -61,6 +61,7 @@
 | T06.1 | `c7e60fa` |
 | T06.2 | `e5ce79d` |
 | T06.3 | `0b3104e` |
+| T10.1 | `1c42aad` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
@@ -118,7 +119,6 @@ flowchart LR
 | T09.1 | `app/providers/base.py`、`mock_provider.py`、`tests/providers/test_mock_provider.py`；稳定无网络 Mock。 | `...test_mock_result_is_repeatable_and_network_free -q` 先失败后 1 passed。 |
 | T09.2 | `openai_provider.py`、`tests/providers/test_openai_error_mapping.py`；官方 SDK、`store=false`、30 秒、无 Base URL。 | `...test_timeout_maps_to_public_timeout_without_raw_body -q` 先失败后 1 passed。 |
 | T09.3 | `openai_provider.py`、`tests/providers/test_provider_schema_validation.py`；非法 JSON/schema 不能形成 AI Finding。 | `...test_invalid_response_creates_no_ai_finding -q` 先失败后 1 passed。 |
-| T10.1 | `app/reviews/service.py`、`tests/reviews/test_review_service.py`；normalize/parse/rules/dedupe/risk/**redaction**，返回无状态确定性 ReportView；Demo/private 均不写报告。 | `...test_create_review_returns_redacted_deterministic_report -q` 先失败后 1 passed。 |
 | T10.3 | 同上；附加一次 Provider 调用，成功/失败均返回确定性结果。 | `...test_ai_failure_preserves_redacted_deterministic_report -q` 先失败后 1 passed。 |
 | T11.1 | `app/api/reviews.py`、`tests/api/test_reviews_api.py`、`test_demo_routes.py`；POST review 与 Demo/private 路由模式边界。 | `...test_post_review_returns_sanitized_report -q` 先失败后 1 passed。 |
 | T12.1 | `app/api/health.py`、`tests/api/test_health.py`；health/ready 不依赖 OpenAI 或数据库。 | `...test_ready_is_available_when_vault_is_locked -q` 先失败后 1 passed。 |
