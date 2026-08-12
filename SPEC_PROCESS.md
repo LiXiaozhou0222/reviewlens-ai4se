@@ -1,5 +1,9 @@
 # ReviewLens 规约生成过程
 
+## 2026-08-13 - T12.1 health/readiness evidence
+
+T12.1 was completed in isolated `codex/release-health` and committed as `040155b`. The implementation used Python 3.12.10 only. Real verification recorded 9 health tests passed, 66 JavaScript-rule tests passed, 249 full-backend tests passed, and clean `git diff --check`. Fresh spec-compliance and code-quality reviews approved the task without Critical findings. The task ledger was updated from 47/62 to 48/62 completed, with 14 P0 tasks remaining. No external deployment, registry, CI, OpenAI request, real credential, or private Diff was used or claimed.
+
 ## 2026-08-12：72-hour Release Scope Revision（已获用户批准）
 
 用户批准停止进一步 triage，并授权将 109 个有效任务压缩为 62 个正式 v1 任务：30 个真实完成、32 个待执行 P0、0 个 P1。该决定不是对任何未来测试、CI、镜像、部署或 Reflection 的完成声明。

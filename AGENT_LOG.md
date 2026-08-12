@@ -1,5 +1,14 @@
 # AGENT_LOG
 
+## 2026-08-13 - T12.1 completed / health and readiness endpoints
+
+- **Task / worktree:** T12.1 was implemented and reviewed in isolated `codex/release-health` at `040155b` (`feat(api): add health and readiness endpoints`). The change is limited to health/readiness wiring, fixed ruleset readiness validation, and focused tests.
+- **Python runtime:** All verification used the explicit Python 3.12.10 interpreter; Python 3.13 was not used.
+- **RED/GREEN evidence:** Health-focused tests reached `9 passed`; JavaScript rule regression tests reached `66 passed`; the full backend suite reached `249 passed`. `git diff --check` was clean.
+- **Behavior:** `/health` reports process liveness without OpenAI dependency. `/ready` validates the complete fixed GEN-001..005 and JS-001..006 ruleset and returns unavailable state for invalid/missing rules, without exposing paths, credentials, stack traces, or deployment details. Vault lock and missing OpenAI configuration do not make deterministic readiness fail.
+- **Reviews:** Fresh spec-compliance review APPROVED with no Critical findings. Fresh code-quality review APPROVED with no release blocker.
+- **Evidence boundary:** No real API key, private Diff, OpenAI request, deployment, registry push, or external CI result was used or claimed.
+
 ## 2026-08-12 01:54:39 +08:00 — 72-hour Release Scope Revision
 
 - **Task / phase:** 用户批准的发布范围修订；未启动 T05.8 或任何实现子任务。
