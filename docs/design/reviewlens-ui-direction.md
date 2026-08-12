@@ -1,8 +1,8 @@
 # ReviewLens UI Direction
 
-**Task:** T13.1  
-**Status:** Design contract for later UI implementation; no UI source code is created by this task.  
-**Fixed design system:** Open Design `linear-app`  
+**Task:** T13.1<br>
+**Status:** Design contract for later UI implementation; no UI source code is created by this task.<br>
+**Fixed design system:** Open Design `linear-app`<br>
 **Review skill:** `web-design-guidelines` (pinned local guideline snapshot)
 
 ## 1. Purpose and boundaries
