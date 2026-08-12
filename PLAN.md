@@ -71,6 +71,7 @@
 | T09.2 | `6059a87` |
 | T09.3 | `45bf113` |
 | T10.3 | `8c96adf` |
+| T10.3 retrospective Provider-boundary repair | `f3d9b64` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
