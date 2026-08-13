@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 import pytest
 
 from app.config.settings import AppSettings, StartupConfigurationError, load_settings
@@ -53,3 +54,20 @@ def test_create_runtime_app_uses_env_and_rejects_missing_or_invalid_mode(
     monkeypatch.setenv("APP_MODE", "untrusted-public-mode")
     with pytest.raises(StartupConfigurationError):
         create_runtime_app()
+
+
+def test_app_serves_built_web_assets_with_a_history_fallback(tmp_path) -> None:
+    web_dist = tmp_path / "web-dist"
+    web_dist.mkdir()
+    (web_dist / "index.html").write_text("<main>ReviewLens Web</main>", encoding="utf-8")
+    (web_dist / "assets").mkdir()
+    (web_dist / "assets" / "app.js").write_text("console.log('web')", encoding="utf-8")
+
+    app = create_app(AppSettings(mode="demo"), web_dist=web_dist)
+    client = TestClient(app)
+
+    assert client.get("/").text == "<main>ReviewLens Web</main>"
+    assert client.get("/assets/app.js").text == "console.log('web')"
+    assert client.get("/reports/current").text == "<main>ReviewLens Web</main>"
+    assert client.get("/ready").json() == {"status": "ready", "mode": "demo"}
+    assert client.get("/admin/v1/vault/status").status_code == 404

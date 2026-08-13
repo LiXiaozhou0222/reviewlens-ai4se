@@ -3,7 +3,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.health import create_health_router
@@ -15,7 +16,7 @@ from app.observability.logging import request_log_middleware
 from app.providers.mock_provider import MockReviewProvider
 
 
-def create_app(settings: AppSettings) -> FastAPI:
+def create_app(settings: AppSettings, *, web_dist: Path | None = None) -> FastAPI:
     app = FastAPI()
     app.middleware("http")(request_log_middleware)
 
@@ -55,11 +56,16 @@ def create_app(settings: AppSettings) -> FastAPI:
             Path("data") / "credentials" / "vault.json"
         )
         app.include_router(create_admin_router())
+    if web_dist is not None:
+        _mount_web_app(app, web_dist)
     return app
 
 
 def create_runtime_app() -> FastAPI:
-    return create_app(load_settings(os.environ))
+    web_dist = Path("/app/web")
+    return create_app(
+        load_settings(os.environ), web_dist=web_dist if web_dist.is_dir() else None
+    )
 
 
 def _set_error_code(request: Request, error_code: str) -> None:
@@ -67,3 +73,17 @@ def _set_error_code(request: Request, error_code: str) -> None:
         **getattr(request.state, "review_metrics", {}),
         "error_code": error_code,
     }
+
+
+def _mount_web_app(app: FastAPI, web_dist: Path) -> None:
+    index_path = web_dist / "index.html"
+    if not index_path.is_file():
+        raise ValueError("Built web assets must include index.html.")
+
+    app.mount("/assets", StaticFiles(directory=web_dist / "assets"), name="web-assets")
+
+    @app.get("/{web_path:path}", include_in_schema=False)
+    def web_history_fallback(web_path: str) -> FileResponse:
+        if web_path.startswith(("api/", "admin/", "health", "ready")):
+            raise StarletteHTTPException(status_code=404)
+        return FileResponse(index_path)
