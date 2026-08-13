@@ -1,0 +1,21 @@
+image: python:3.12-slim
+
+stages:
+  - test
+
+unit-test:
+  stage: test
+  variables:
+    APP_MODE: demo
+    NODE_VERSION: 22.16.0
+  before_script:
+    - apt-get update
+    - apt-get install --yes --no-install-recommends make curl xz-utils
+    - curl --fail --silent --show-error --location "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz" --output /tmp/node.tar.xz
+    - tar --extract --file /tmp/node.tar.xz --directory /opt
+    - export PATH="/opt/node-v$NODE_VERSION-linux-x64/bin:$PATH"
+    - node --version
+    - npm --version
+    - make install
+  script:
+    - make test

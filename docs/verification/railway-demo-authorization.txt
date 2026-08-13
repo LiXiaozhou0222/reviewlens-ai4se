@@ -1,0 +1,6 @@
+REVIEWLENS_DEPLOYMENT_AUTHORIZED
+platform: Railway
+account/project: user's Railway account, ReviewLens project
+scope: public Demo only
+mode: APP_MODE=demo
+secrets: none; no OpenAI API key, Vault data, or other secret permitted

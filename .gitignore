@@ -11,6 +11,7 @@ credential-vault*
 __pycache__/
 *.pyc
 .pytest_cache/
+.pytest-*/
 .coverage
 htmlcov/
 .venv/
@@ -29,3 +30,9 @@ Thumbs.db
 # Runtime data
 data/
 logs/
+
+# Local Superpowers execution artifacts
+.superpowers/
+
+# Local linked worktrees
+.worktrees/
