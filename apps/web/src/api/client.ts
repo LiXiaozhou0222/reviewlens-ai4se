@@ -3,9 +3,7 @@ export class ReviewRequestError extends Error {
     super(code)
   }
 }
-
-
-export async function reviewDiff(diff: string): Promise<unknown> {
+export async function reviewDiff(diff: string): Promise<ReviewReport> {
   const response = await fetch('/api/v1/reviews', {
     method: 'POST',
     headers: { 'content-type': 'application/octet-stream' },
@@ -16,7 +14,7 @@ export async function reviewDiff(diff: string): Promise<unknown> {
   if (!response.ok) {
     throw new ReviewRequestError(publicErrorCode(payload))
   }
-  return payload
+  return payload as ReviewReport
 }
 
 
@@ -34,3 +32,4 @@ function publicErrorCode(payload: unknown): string {
   }
   return 'INTERNAL_ERROR'
 }
+import { ReviewReport } from '../features/report/types'

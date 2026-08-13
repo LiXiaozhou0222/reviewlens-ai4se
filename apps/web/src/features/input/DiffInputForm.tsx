@@ -1,6 +1,7 @@
 import { FormEvent, useRef, useState } from 'react'
 
 import { ReviewRequestError, reviewDiff } from '../../api/client'
+import { ReviewReport } from '../report/types'
 
 
 type InputMode = 'paste' | 'upload'
@@ -18,7 +19,12 @@ const ERROR_MESSAGES: Record<string, string> = {
 }
 
 
-export function DiffInputForm() {
+interface DiffInputFormProps {
+  onReport?: (report: ReviewReport) => void
+}
+
+
+export function DiffInputForm({ onReport = () => undefined }: DiffInputFormProps) {
   const [mode, setMode] = useState<InputMode>('paste')
   const [pasteValue, setPasteValue] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -52,7 +58,7 @@ export function DiffInputForm() {
       setError(null)
       setIsSubmitting(true)
       try {
-        await reviewDiff(value)
+        onReport(await reviewDiff(value))
       } catch (requestError) {
         showError(
           requestError instanceof ReviewRequestError
