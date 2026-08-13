@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 54，待执行 P0 为 8，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 58，待执行 P0 为 4，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -80,6 +80,10 @@
 | T15.1 | `52bef4f` |
 | T16.6 | `d52db9a` |
 | T19.1 | `153c8ed` |
+| T17.3 | `fb7464f` |
+| T18.1 | `d05b1d0`, local-test repair `1450df3` |
+| T18.3 | `2c5f117` |
+| T18.5 | `9883b81` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 

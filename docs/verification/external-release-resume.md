@@ -11,17 +11,15 @@ This checklist records real outstanding evidence. It must not be marked complete
    docker buildx version
    ```
 
-2. Confirm GNU Make is available:
+2. GNU Make is now available at `C:\\ProgramData\\chocolatey\\bin\\make.exe`; open a fresh terminal to refresh PATH, then confirm:
 
    ```powershell
    make --version
    ```
 
-3. Run the unified local commands:
+3. `make test` and `make lint` have passed locally. Run the remaining unified build command after Docker becomes available:
 
    ```powershell
-   make test
-   make lint
    make build
    ```
 
