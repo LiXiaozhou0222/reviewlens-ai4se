@@ -1,5 +1,12 @@
 # AGENT_LOG
 
+## 2026-08-14 - T20.1 / T20.4 completed / Railway public Demo
+
+- **Authorization:** The user explicitly authorized a public Demo deployment on Railway, allowing a new ReviewLens project/service under their account, with `APP_MODE=demo` only and no real OpenAI API key, Vault data, or other secret. The non-secret authorization record is `docs/verification/railway-demo-authorization.txt`.
+- **Real deployment:** Railway project `ReviewLens` (`72638336-0068-40c4-ae73-d2e7e5b0121b`) and service `reviewlens-demo` (`3da72090-1016-437f-ab6f-be70973504c9`) were created from the public image `ghcr.io/lixiaozhou0222/reviewlens:0.1.0`. Deployment `49d491fc-d22f-4f04-bfc8-3571c2424cf6` completed with `SUCCESS`; Railway reported image digest `sha256:4eabfe708b4bcd6d751de7523416ea0d96ba55dd446502d1831ae043fd725373`. No database, volume, OpenAI key, or Vault secret was configured; the service variable audit showed `APP_MODE=demo` plus Railway-managed metadata variables.
+- **Real public smoke:** Railway domain `https://reviewlens-demo-production.up.railway.app` was generated for port 8080. `bash scripts/verify-public-demo.sh --url https://reviewlens-demo-production.up.railway.app` passed: `/ready` returned `{"status":"ready","mode":"demo"}` and `/admin/v1/vault/status` returned 404. A direct repeat confirmed the same readiness response and `admin_status=404`. The deployed service logs showed Uvicorn listening on `0.0.0.0:8080` and startup completed.
+- **Boundary:** This is a public Demo only, stateless Mock deployment. No private mode, real OpenAI request, API key, Vault data, custom domain, or student `REFLECTION.md` content was created. Railway CLI agent skill download was attempted once and failed due a GitHub connection reset; the regular authenticated CLI was sufficient for this deployment.
+
 ## 2026-08-13 - T18.8 completed / GHCR v0.1.0 fresh pull and run
 
 - **Pre-release checks:** Working tree was clean. HEAD `fdb998f276ea56960169b046b71e276b4f6a7778` matched the latest successful GitHub `test` workflow and NJU GitLab `unit-test` pipeline. The existing release contract was rechecked: only `push` tags matching `v*` trigger `.github/workflows/release.yml`; it pushes `linux/amd64` to `ghcr.io/${{ github.repository_owner }}/reviewlens`.

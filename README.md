@@ -12,7 +12,7 @@ private 模式的 API key 仅以主密码加密 Vault 文件保存，默认锁�
 
 ## 分发与验证状态
 
-计划交付一个 `linux/amd64` OCI image，并以单条 `docker build` 和分别的 Demo/private `docker run` 命令运行；Windows 11 x64 + Docker Desktop 是本地支持环境。Docker image、公开 Registry、CI、NJU GitLab Pipeline 和公网 Demo URL 尚未产生，后续只会在真实验证后记录。
+已真实验证 `linux/amd64` OCI image、GitHub Actions、NJU GitLab Pipeline 和公开 Demo。发布镜像为 `ghcr.io/lixiaozhou0222/reviewlens:0.1.0`；公网 Demo 为 `https://reviewlens-demo-production.up.railway.app`，运行在 Railway `APP_MODE=demo`，仅使用 Mock，不配置真实 OpenAI API Key 或 Vault 数据。
 
 ## 安装
 
@@ -50,5 +50,5 @@ docker run --rm -p 127.0.0.1:8080:8080 -v reviewlens-private:/data -e APP_MODE=p
 ## 已知限制
 
 - 本机已验证 API、前端测试、Vite 生产构建、TypeScript 检查和 Docker 上下文排除检查。
-- 当前机器找不到 `docker` 和 `make` 命令，因此尚未运行真实 `docker buildx`、容器 smoke 或 `make` 命令；公开 GHCR 镜像、远程 CI Pass 和 HTTPS Demo URL 均尚未产生。
+- 已完成真实 `make build`、Docker 容器 smoke、公开 GHCR fresh pull/run、GitHub Actions、NJU GitLab `unit-test` 和 Railway HTTPS Demo smoke；剩余提交门禁是学生本人完成 `REFLECTION.md`。
 - `REFLECTION.md` 必须由学生本人完成；相关过程边界见 `docs/reflection-evidence.md`。

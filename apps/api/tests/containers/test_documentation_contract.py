@@ -13,7 +13,8 @@ def test_documentation_describes_real_local_state_without_fabricated_evidence() 
 
     for heading in ("## 安装", "## 运行", "## 安全边界", "## 已知限制"):
         assert heading in readme
-    assert "尚未产生" in readme
+    assert "ghcr.io/lixiaozhou0222/reviewlens:0.1.0" in readme
+    assert "https://reviewlens-demo-production.up.railway.app" in readme
     assert "REFLECTION.md" in reflection_evidence
     assert "does not author" in reflection_evidence
     assert "ghcr.io/" in verifier
