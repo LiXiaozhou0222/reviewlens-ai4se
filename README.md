@@ -13,3 +13,42 @@ private 模式的 API key 仅以主密码加密 Vault 文件保存，默认锁�
 ## 分发与验证状态
 
 计划交付一个 `linux/amd64` OCI image，并以单条 `docker build` 和分别的 Demo/private `docker run` 命令运行；Windows 11 x64 + Docker Desktop 是本地支持环境。Docker image、公开 Registry、CI、NJU GitLab Pipeline 和公网 Demo URL 尚未产生，后续只会在真实验证后记录。
+
+## 安装
+
+需要 Python 3.12、Node.js 22、npm、GNU Make 和 Docker Desktop。Linux/macOS 或 CI 中可运行：
+
+```sh
+make install
+```
+
+Windows 当前开发环境可分别运行 API lockfile 和 Web lockfile 安装；不要将 `.env`、Vault、真实 API key 或私有 Diff 提交到仓库。
+
+## 运行
+
+构建统一镜像后，Demo 使用 Mock 且不注册 Vault 路由：
+
+```sh
+docker buildx build --platform linux/amd64 --load -t reviewlens:test .
+docker run --rm -p 8080:8080 -e APP_MODE=demo reviewlens:test
+```
+
+私有模式只应发布到本机回环地址：
+
+```sh
+docker run --rm -p 127.0.0.1:8080:8080 -v reviewlens-private:/data -e APP_MODE=private reviewlens:test
+```
+
+私有 Vault 的主密码和 API key 只能通过本机私有页面提交；不要在公开 Demo、命令历史、日志或仓库文件中填写真实凭据。
+
+## 安全边界
+
+- Demo 是无状态 Mock，不保存审查结果，不调用真实 OpenAI，不注册 Vault/private 路由。
+- private Vault 仅设计为 loopback 服务边界；浏览器隐藏不是安全措施。
+- `.dockerignore` 排除环境文件、Vault、密钥、运行数据和测试，以免进入镜像构建上下文。
+
+## 已知限制
+
+- 本机已验证 API、前端测试、Vite 生产构建、TypeScript 检查和 Docker 上下文排除检查。
+- 当前机器找不到 `docker` 和 `make` 命令，因此尚未运行真实 `docker buildx`、容器 smoke 或 `make` 命令；公开 GHCR 镜像、远程 CI Pass 和 HTTPS Demo URL 均尚未产生。
+- `REFLECTION.md` 必须由学生本人完成；相关过程边界见 `docs/reflection-evidence.md`。

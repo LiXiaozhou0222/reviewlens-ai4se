@@ -15,3 +15,4 @@ def test_ci_definitions_run_mock_backed_unified_tests() -> None:
 
     assert "pull_request:" in github
     assert "unit-test:" in gitlab
+    assert "NODE_VERSION: 22.16.0" in gitlab
