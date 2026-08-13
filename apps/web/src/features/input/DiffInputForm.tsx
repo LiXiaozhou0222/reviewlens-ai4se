@@ -27,6 +27,7 @@ export function DiffInputForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const errorRef = useRef<HTMLParagraphElement>(null)
   const submitLockRef = useRef(false)
+  const inputDescription = error === null ? 'diff-input-help' : 'diff-input-help diff-input-error'
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -111,7 +112,7 @@ export function DiffInputForm() {
               Unified Diff
               <textarea
                 autoComplete="off"
-                aria-describedby="diff-input-help"
+                aria-describedby={inputDescription}
                 name="diff"
                 onChange={(event) => setPasteValue(event.target.value)}
                 rows={12}
@@ -124,6 +125,7 @@ export function DiffInputForm() {
               选择 Diff 文件
               <input
                 accept=".diff,.patch"
+                aria-describedby={inputDescription}
                 key={fileInputKey}
                 name="diff-file"
                 onChange={(event) => setSelectedFiles(Array.from(event.target.files ?? []))}
@@ -134,7 +136,13 @@ export function DiffInputForm() {
         </fieldset>
 
         {error !== null ? (
-          <p aria-live="assertive" ref={errorRef} role="alert" tabIndex={-1}>
+          <p
+            aria-live="assertive"
+            id="diff-input-error"
+            ref={errorRef}
+            role="alert"
+            tabIndex={-1}
+          >
             {error}
           </p>
         ) : null}
@@ -184,7 +192,9 @@ function validateDiff(value: string): string | null {
   if (new TextEncoder().encode(value).byteLength > MAX_BYTES) {
     return 'INPUT_TOO_LARGE'
   }
-  if (value.split(/\r\n|\r|\n/).length > MAX_LINES) {
+  const lines = value.split(/\r\n|\r|\n/)
+  const lineCount = /(?:\r\n|\r|\n)$/.test(value) ? lines.length - 1 : lines.length
+  if (lineCount > MAX_LINES) {
     return 'LINE_LIMIT_EXCEEDED'
   }
   return null

@@ -78,6 +78,44 @@ describe('DiffInputForm', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  it('accepts an exact 5,000-line paste ending in a newline', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({}), { status: 200 }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    render(<DiffInputForm />)
+
+    fireEvent.change(screen.getByLabelText('Unified Diff'), {
+      target: { value: `${Array(5_000).fill('x').join('\n')}\n` },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '开始审查' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('associates input constraints and blocking errors with the active input', async () => {
+    render(<DiffInputForm />)
+
+    const pasteInput = screen.getByLabelText('Unified Diff')
+    expect(pasteInput).toHaveAttribute('aria-describedby', 'diff-input-help')
+    fireEvent.click(screen.getByRole('button', { name: '开始审查' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveAttribute('id', 'diff-input-error')
+      expect(pasteInput).toHaveAttribute(
+        'aria-describedby',
+        'diff-input-help diff-input-error',
+      )
+    })
+
+    fireEvent.click(screen.getByRole('radio', { name: '上传文件' }))
+    expect(screen.getByLabelText('选择 Diff 文件')).toHaveAttribute(
+      'aria-describedby',
+      'diff-input-help',
+    )
+  })
+
   it('treats whitespace-only paste as empty input', async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
