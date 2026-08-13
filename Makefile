@@ -5,7 +5,7 @@ install:
 	cd apps/web && npm ci
 
 test:
-	cd apps/api && python -m pytest -q
+	cd apps/api && python -m pytest -q --basetemp=.pytest-make
 	cd apps/web && npm run test -- --run
 
 lint:

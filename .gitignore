@@ -11,6 +11,7 @@ credential-vault*
 __pycache__/
 *.pyc
 .pytest_cache/
+.pytest-*/
 .coverage
 htmlcov/
 .venv/
