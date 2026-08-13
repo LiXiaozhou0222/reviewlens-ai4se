@@ -1,5 +1,11 @@
 # AGENT_LOG
 
+## 2026-08-13 - NJU GitLab unit-test pipeline verified
+
+- **Authorized remote action:** The user provided `https://git.nju.edu.cn/Echo/reviewlens-ai4se.git` and authorized pushing `codex/release-integration`. The branch was pushed at commit `7394577305162e038ad95f9d4c62aae30a26c0a9`.
+- **Real external evidence:** NJU GitLab pipeline `320970` completed with `success`; its required `unit-test` job `613821` completed with `success` at `https://git.nju.edu.cn/Echo/reviewlens-ai4se/-/jobs/613821`. Pipeline link: `https://git.nju.edu.cn/Echo/reviewlens-ai4se/-/pipelines/320970`. The job commit exactly matches `7394577`.
+- **Boundary:** This verifies only the GitLab pipeline for that pushed commit. It does not claim GHCR publication, fresh pull, deployment, public URL, or `REFLECTION.md`.
+
 ## 2026-08-13 - T17.1 completed / local unified OCI image
 
 - **Scope and real commit:** T17.1's unified web/API Docker image implementation is `4ae0f57` (`feat(container): serve web from unified image`). It is a local `linux/amd64` image only; no Registry push or tag was created.
