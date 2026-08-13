@@ -1,5 +1,13 @@
 # AGENT_LOG
 
+## 2026-08-13 - T18.8 completed / GHCR v0.1.0 fresh pull and run
+
+- **Pre-release checks:** Working tree was clean. HEAD `fdb998f276ea56960169b046b71e276b4f6a7778` matched the latest successful GitHub `test` workflow and NJU GitLab `unit-test` pipeline. The existing release contract was rechecked: only `push` tags matching `v*` trigger `.github/workflows/release.yml`; it pushes `linux/amd64` to `ghcr.io/${{ github.repository_owner }}/reviewlens`.
+- **Authorized release:** The user authorized the first release tag under the existing contract. Annotated tag `v0.1.0` was created at `fdb998f` and pushed to GitHub. Release workflow `publish-image` succeeded at `https://github.com/LiXiaozhou0222/reviewlens-ai4se/actions/runs/31716902039` (job `https://github.com/LiXiaozhou0222/reviewlens-ai4se/actions/runs/31716902039/job/94503798207`).
+- **Real image evidence:** Image `ghcr.io/lixiaozhou0222/reviewlens:0.1.0` is publicly pullable. OCI index digest is `sha256:4eabfe708b4bcd6d751de7523416ea0d96ba55dd446502d1831ae043fd725373`; its `linux/amd64` image manifest digest is `sha256:fd83145d3babd46acb13813772adc5c2ee4645f71b6fe9ee86be4dfa840281e9`.
+- **Fresh environment evidence:** `bash scripts/verify-container-start.sh --image ghcr.io/lixiaozhou0222/reviewlens:0.1.0 --mode demo` and the same command with `--mode private` both completed successfully. The script performed fresh pulls and temporary container readiness checks, then removed the containers. No deployment or public Demo was performed.
+- **Remaining boundary:** T20.1 still requires a separate explicit deployment authorization record; T20.4 still requires a real HTTPS Demo smoke. No deployment URL or `REFLECTION.md` text was created or claimed.
+
 ## 2026-08-13 - NJU GitLab unit-test pipeline verified
 
 - **Authorized remote action:** The user provided `https://git.nju.edu.cn/Echo/reviewlens-ai4se.git` and authorized pushing `codex/release-integration`. The branch was pushed at commit `7394577305162e038ad95f9d4c62aae30a26c0a9`.
