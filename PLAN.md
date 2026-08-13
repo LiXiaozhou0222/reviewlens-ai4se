@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 53，待执行 P0 为 9，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 54，待执行 P0 为 8，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -79,6 +79,7 @@
 | T14.1 | `27f1a61` |
 | T15.1 | `52bef4f` |
 | T16.6 | `d52db9a` |
+| T19.1 | `153c8ed` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
@@ -142,7 +143,6 @@ flowchart LR
 | T18.3 | `scripts/verify-ci-contract.ps1`、`.github/workflows/test.yml`、`.gitlab-ci.yml`；GitHub push/PR 与 GitLab `unit-test` 均运行 Mock、一键测试。 | `pwsh -File scripts/verify-ci-contract.ps1 -Provider GitLab` 先失败后成功。 |
 | T18.5 | `.github/workflows/release.yml`；真实 tag 构建一个 linux/amd64 image 并发布 GHCR。 | `rg -q "linux/amd64" .github/workflows/release.yml` 先失败后成功。 |
 | T18.8 | `scripts/verify-container-start.sh`、`docs/verification/fresh-environment-startup.md`；真实公开 image pull 后只做一次 clean-environment Demo/private run 取证。 | 未发布 tag 必须失败；真实 tag 成功后记录 digest、时间和命令。 |
-| T19.1 | `scripts/verify-documentation.ps1`、`README.md`、`docs/reflection-evidence.md`、`AGENT_LOG.md`；真实仓库/镜像/运行/限制/过程证据。 | `pwsh -File scripts/verify-documentation.ps1 -RejectFabricatedEvidence` 先失败后成功。 |
 | T20.1 | `scripts/verify-deployment-evidence.ps1`、`verify-public-demo.sh`、部署文档；平台中立授权记录和 Demo 部署合同。 | `... -RequireAuthorizationRecord` 未授权失败，获授权后可验证。 |
 | T20.4 | `docs/verification/public-demo-deployment.md`、README、AGENT_LOG；真实 HTTPS Demo smoke、Mock 标识、无状态、Vault/private route 不可达。 | `bash scripts/verify-public-demo.sh --url "$REVIEWLENS_DEMO_URL"` 只在真实 URL 存在时成功。 |
 

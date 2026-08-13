@@ -1,5 +1,12 @@
 # AGENT_LOG
 
+## 2026-08-13 - T19.1 completed / truthful release documentation
+
+- **Task / scope:** T19.1 adds only the release README sections, the student-owned reflection boundary note, and an anti-fabrication documentation verifier. It does not alter `REFLECTION.md`, deploy, publish an image, push a remote, create a PR, or claim external CI success.
+- **Real RED -> GREEN:** The documentation contract RED failed because `docs/reflection-evidence.md` did not exist. The minimal implementation then made the focused Python 3.12 test pass and `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-documentation.ps1 -Check RejectFabricatedEvidence` exit successfully. The verifier requires install/run/security/known-limit sections and rejects unverified `ghcr.io/` or HTTPS references in README.
+- **Evidence and limits:** Final local verification was backend `270 passed, 1 framework deprecation warning`; frontend `7 passed` files and `23 passed` tests; Vite production build and TypeScript typecheck passed; Docker-context, CI-contract, and documentation checks passed. The README records the real outstanding environment/external gaps: this machine lacks usable `docker` and `make`, and no public Registry image, remote CI Pass, or HTTPS Demo exists yet.
+- **Review deviation:** Per the user's direct-implementation instruction and repeated agent-thread limits, the controller performed the final contract/quality review. No fresh-agent approval is claimed. `153c8ed` (`docs: document local release verification state`) is the real task commit.
+
 ## 2026-08-13 - T16.6 completed / runtime ModeGate and local Vault UI
 
 - **Human contract decision:** T16.6 exposed that the browser had no authoritative mode source. The user explicitly approved extending the existing public `/ready` response from `{"status":"ready"}` to `{"status":"ready","mode":"demo"|"private"}`. The value comes directly from the same `AppSettings.mode` instance that controls backend router registration; no dedicated route or `VITE_APP_MODE` authority was added. This smallest interface-contract completion is reflected in `SPEC.md` and `PLAN.md`.
