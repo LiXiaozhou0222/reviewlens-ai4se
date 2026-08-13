@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID
@@ -42,9 +43,21 @@ from app.rules.risk import calculate_deterministic_risk, sort_findings
 APP_VERSION = "0.1.0"
 
 
+@dataclass(frozen=True)
+class ReviewResult:
+    report: ReportView
+    file_count: int
+
+
 def create_review(
     raw_diff: bytes, *, provider: ReviewProvider | None = None
 ) -> ReportView:
+    return create_review_with_metrics(raw_diff, provider=provider).report
+
+
+def create_review_with_metrics(
+    raw_diff: bytes, *, provider: ReviewProvider | None = None
+) -> ReviewResult:
     """Create one deterministic, in-memory-only report from a unified diff."""
     normalized_diff = normalize_diff(raw_diff)
     parsed_diff = parse_unified_diff(normalized_diff.text)
@@ -60,18 +73,21 @@ def create_review(
     if provider_result is not None and provider_result.status is AIReviewStatus.SUCCEEDED:
         findings.extend(provider_result.findings)
 
-    return ReportView(
-        report_id=UUID(hex=normalized_diff.sha256[:32]),
-        created_at=report_timestamp,
-        updated_at=report_timestamp,
-        diff_sha256=normalized_diff.sha256,
-        deterministic_risk=calculate_deterministic_risk(ordered_findings),
-        ai_status=ai_status,
-        provider=provider_name,
-        model=provider_model,
-        ruleset_version=RULESET_VERSION,
-        app_version=APP_VERSION,
-        findings=findings,
+    return ReviewResult(
+        report=ReportView(
+            report_id=UUID(hex=normalized_diff.sha256[:32]),
+            created_at=report_timestamp,
+            updated_at=report_timestamp,
+            diff_sha256=normalized_diff.sha256,
+            deterministic_risk=calculate_deterministic_risk(ordered_findings),
+            ai_status=ai_status,
+            provider=provider_name,
+            model=provider_model,
+            ruleset_version=RULESET_VERSION,
+            app_version=APP_VERSION,
+            findings=findings,
+        ),
+        file_count=len(parsed_diff.files),
     )
 
 
