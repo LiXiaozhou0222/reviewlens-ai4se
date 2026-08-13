@@ -1,0 +1,26 @@
+.git/
+.worktrees/
+.idea/
+.vscode/
+docs/
+*.md
+REFLECTION.md
+
+# Credentials and local runtime state must never enter the build context.
+.env
+.env.*
+secrets/
+*.key
+*.pem
+credential-vault*
+data/
+logs/
+
+# Development-only source and generated artifacts are not needed by the image.
+apps/api/tests/
+**/__pycache__/
+**/.pytest_cache/
+**/.pytest-*/
+**/node_modules/
+**/dist/
+coverage/
