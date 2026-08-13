@@ -1,5 +1,11 @@
 # AGENT_LOG
 
+## 2026-08-13 - External release verification hold
+
+- **Observed environment state:** This Windows host has no usable `docker` executable (`docker buildx build --platform linux/amd64 --load -t reviewlens:test .` failed before execution with command-not-found) and no GNU `make` executable in PATH or common Docker/Git/MSYS/Chocolatey locations. `pwsh` is absent from PATH, but system `powershell.exe` successfully ran the repository's local contract checks; Git's bundled Bash successfully ran shell-script argument guards.
+- **Work completed without external claims:** The unified Dockerfile, `.dockerignore`, Makefile, CI definitions, image/Demo verification scripts, and documentation were implemented and locally contract-tested. Final local evidence on the release implementation branch was Python 3.12 backend `270 passed, 1 framework deprecation warning`; frontend `7 passed` files and `23 passed` tests; Vite production build and TypeScript typecheck passed; Docker-context, CI-contract, and documentation checks passed.
+- **Still blocked and not counted complete:** Real `docker buildx`/container smoke, `make` execution, remote GitHub/GitLab pipelines, GHCR publish/fresh pull, HTTPS public Demo, and the student-authored `REFLECTION.md`. No remote push, registry publication, deployment, CI run, image digest, public URL, or Reflection text was created or claimed. The precise resume order is recorded in `docs/verification/external-release-resume.md`.
+
 ## 2026-08-13 - T19.1 completed / truthful release documentation
 
 - **Task / scope:** T19.1 adds only the release README sections, the student-owned reflection boundary note, and an anti-fabrication documentation verifier. It does not alter `REFLECTION.md`, deploy, publish an image, push a remote, create a PR, or claim external CI success.
