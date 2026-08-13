@@ -1,5 +1,12 @@
 # AGENT_LOG
 
+## 2026-08-13 - T17.1 completed / local unified OCI image
+
+- **Scope and real commit:** T17.1's unified web/API Docker image implementation is `4ae0f57` (`feat(container): serve web from unified image`). It is a local `linux/amd64` image only; no Registry push or tag was created.
+- **Real build and image evidence:** After Docker Desktop was confirmed reachable through the user-authorized full-access execution context, `C:\\ProgramData\\chocolatey\\bin\\make.exe build` completed successfully. It ran the Vite build then `docker buildx build --platform linux/amd64 --load -t reviewlens:test .`. Local image inspection reported `sha256:062ab0ab4c71c4154bb4e34cf15cf6802f89a34df36bd3ab4599c2fda4a62a9b`, `linux/amd64`. The focused repository contract test at its actual location, `apps/api/tests/containers/test_unified_image_contract.py`, passed: `1 passed`.
+- **Runtime smoke evidence:** A temporary loopback-published Demo container returned `{"status":"ready","mode":"demo"}` and did not expose `/admin/v1/vault/status` (404). A separate temporary loopback-published private container returned `{"status":"ready","mode":"private"}` and its Vault status response was `exists=false`, `unlocked=false`, with no provider, model, or masked key. Both smoke containers were removed. An initial private-check harness incorrectly expected a nonexistent `status` response field; it was corrected to assert the real schema and then passed. No application code changed for that harness correction.
+- **Remaining boundary:** T18.8 still requires a real published image and fresh pull/run evidence; T20.1/T20.4 still require explicit deployment authorization and a real HTTPS Demo. The local image result does not satisfy any of those external-evidence tasks.
+
 ## 2026-08-13 - T17.3 / T18.1 / T18.3 / T18.5 completed locally
 
 - **Scope and real commits:** T17.3 Docker-context boundary is `fb7464f`; T18.1 Makefile is `d05b1d0`, with local Windows pytest-temp isolation repair `1450df3`; T18.3 Mock-backed GitHub/GitLab workflow contracts is `2c5f117`; T18.5 release-workflow contract is `9883b81`. These four tasks implement and locally verify their respective source contracts only. They do not claim a built image, remote pipeline run, registry publication, or deployment.

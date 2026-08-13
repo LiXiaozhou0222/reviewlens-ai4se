@@ -4,7 +4,7 @@ This checklist records real outstanding evidence. It must not be marked complete
 
 ## Local Tooling
 
-1. Confirm Docker Desktop is running with Linux containers:
+1. Docker Desktop with Linux containers is now verified and the local `reviewlens:test` image was built successfully. Before a repeat local build, confirm:
 
    ```powershell
    docker version
@@ -17,7 +17,7 @@ This checklist records real outstanding evidence. It must not be marked complete
    make --version
    ```
 
-3. `make test` and `make lint` have passed locally. Run the remaining unified build command after Docker becomes available:
+3. `make test`, `make lint`, and `make build` have passed locally. Repeat only when a new local image is needed:
 
    ```powershell
    make build
