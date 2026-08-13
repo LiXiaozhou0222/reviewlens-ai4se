@@ -19,7 +19,7 @@
 
 ## 正式任务账本
 
-当前正式 v1 任务总数为 **62**：已完成 52，待执行 P0 为 10，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
+当前正式 v1 任务总数为 **62**：已完成 53，待执行 P0 为 9，P1 为 0。T05.7 是 `CANCELLED / REMOVED BY APPROVED SCOPE REVISION`，不是正式能力也不计完成。
 
 ### 已完成任务（历史不重写）
 
@@ -78,6 +78,7 @@
 | T12.5 | `eb4222b` |
 | T14.1 | `27f1a61` |
 | T15.1 | `52bef4f` |
+| T16.6 | `d52db9a` |
 
 这些提交、RED/GREEN 与双评审的真实证据保留在 `AGENT_LOG.md`、`SPEC_PROCESS.md` 和 Git 历史中。
 
@@ -135,7 +136,6 @@ flowchart LR
 | T06.1 | `app/reviews/redaction.py`、`tests/reviews/test_finding_redaction.py`；GEN-001 不可逆替换。 | `...test_gen_001_never_retains_secret_or_tail -q` 先失败后 1 passed。 |
 | T06.2 | `app/reviews/schemas.py`、`tests/reviews/test_redacted_schema.py`；SanitizedFinding 拒绝 raw 字段。 | `...test_sanitized_finding_has_no_raw_secret_field -q` 先失败后 1 passed。 |
 | T06.3 | 同上；Provider payload 和 AI Finding 的二次脱敏。 | `...test_ai_payload_and_ai_finding_are_redacted -q` 先失败后 1 passed。 |
-| T16.6 | `features/admin/VaultPage.tsx`、`ModeGate.tsx`、对应测试；private Vault 操作状态且 Demo 不呈现 private controls。 | `npm.cmd run test -- --run tests/ModeGate.test.tsx -t "does not render private controls in demo mode"` 先失败后 1 passed。 |
 | T17.1 | 根 `Dockerfile`、`tests/containers/test_unified_image_contract.py`；单一 linux/amd64 image、Web/API、runtime factory。 | `docker buildx build --platform linux/amd64 --load -t reviewlens:test .` 先失败后成功；合同测试 1 passed。 |
 | T17.3 | `.dockerignore`、`scripts/verify-container-start.ps1`；无 Vault/.env/真实 secret/Diff 的构建上下文，验证 demo/private 单条 docker run。 | `pwsh -File scripts/verify-container-start.ps1 -Check DockerfileExcludesSecrets` 先失败后成功。 |
 | T18.1 | `Makefile`；`install/test/lint/build` 的真实后端/前端/镜像命令。 | `make -n test` 先失败后打印实际命令。 |

@@ -74,7 +74,7 @@ private 直接运行时，**整个 app** 只绑定 `127.0.0.1`、`::1` 或 Unix 
 | API | 方法 | Private | Demo | 合同 |
 | --- | --- | --- | --- | --- |
 | `/health` | GET | 可用 | 可用 | 存活，不依赖 OpenAI |
-| `/ready` | GET | 可用 | 可用 | 配置和规则集可接收审查；Vault 未解锁不使确定性服务未就绪 |
+| `/ready` | GET | 可用 | 可用 | 配置和规则集可接收审查；ready 响应返回非敏感运行时 `mode`（`private` 或 `demo`）；Vault 未解锁不使确定性服务未就绪 |
 | `/api/v1/reviews` | POST | 可用 | 可用 | 校验输入、生成已脱敏请求级 `ReportView` |
 | 浏览器 Markdown 导出 | 客户端 | 可用 | 可用 | 仅使用当前已脱敏 ReportView，不写服务端缓存 |
 | `/admin/v1/vault/status` | GET | 仅 private 回环 app | 不注册 | 仅状态、模型和掩码尾号 |
