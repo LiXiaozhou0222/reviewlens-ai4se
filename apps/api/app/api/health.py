@@ -24,7 +24,7 @@ def create_health_router(*, settings: AppSettings) -> APIRouter:
                 status_code=503,
                 content={"status": "not_ready"},
             )
-        return JSONResponse(content={"status": "ready"})
+        return JSONResponse(content={"status": "ready", "mode": settings.mode})
 
     return router
 

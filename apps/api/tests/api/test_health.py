@@ -24,7 +24,7 @@ def test_ready_accepts_reviews_in_both_supported_modes(mode: str) -> None:
     response = TestClient(create_app(AppSettings(mode=mode))).get("/ready")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ready"}
+    assert response.json() == {"status": "ready", "mode": mode}
 
 
 def test_ready_is_available_when_vault_is_locked(tmp_path: Path) -> None:
@@ -43,7 +43,7 @@ def test_ready_is_available_when_vault_is_locked(tmp_path: Path) -> None:
     response = TestClient(app).get("/ready")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ready"}
+    assert response.json() == {"status": "ready", "mode": "private"}
     assert fake_api_key not in response.text
     assert str(vault_path) not in response.text
     assert "traceback" not in response.text.casefold()

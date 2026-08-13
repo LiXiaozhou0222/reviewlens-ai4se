@@ -26,18 +26,23 @@ afterEach(() => {
 })
 
 describe('App bootstrap', () => {
-  it('renders the mode shell', () => {
+  it('renders a mode loading state', () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 503 })))
     render(<App />)
 
     expect(screen.getByRole('main')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'ReviewLens' })).toBeInTheDocument()
-    expect(screen.getByText('Mode shell')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('正在确认运行模式')
   })
 
   it('announces a current report and provides a skip link after review completion', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(new Response(JSON.stringify(REPORT), { status: 200 })),
+      vi.fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ status: 'ready', mode: 'demo' }), { status: 200 }),
+        )
+        .mockResolvedValueOnce(new Response(JSON.stringify(REPORT), { status: 200 })),
     )
     render(<App />)
 
